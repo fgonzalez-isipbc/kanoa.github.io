@@ -1,0 +1,23 @@
+/* Custom Styles for Interactive Form Elements */
+.rating-option input[type="radio"]:checked + div {
+    border-color: #E85A24;
+    background-color: #FFF2EC;
+    color: #E85A24;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(232, 90, 36, 0.15);
+}
+
+.kanoa-rating-btn.active svg {
+    fill: #E85A24;
+    stroke: #E85A24;
+    filter: drop-shadow(0px 2px 4px rgba(232, 90, 36, 0.3));
+}
+
+/* Pulse animation for CTA */
+@keyframes customPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.95; transform: scale(1.02); }
+}
+.pulse-btn {
+    animation: customPulse 3s infinite ease-in-out;
+}

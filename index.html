@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanoa - Acompañamiento e Inclusión en tus Compras</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-kanoa-bg text-kanoa-navy font-sans antialiased selection:bg-kanoa-orange selection:text-white">
+
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <a href="#" class="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-kanoa-orange rounded-lg p-1">
+                <!-- SVG Icon reproducing Kanoa logo style -->
+                <div class="w-12 h-12 flex items-center justify-center rounded-xl bg-kanoa-orange-light text-kanoa-orange group-hover:scale-105 transition-transform">
+                    <svg class="w-8 h-8" viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Heart Arc -->
+                        <path d="M 20 40 A 25 25 0 0 1 50 25 A 25 25 0 0 1 80 40" stroke="#E85A24" stroke-width="6" stroke-linecap="round" fill="none"/>
+                        <!-- Canoe -->
+                        <path d="M 15 50 Q 50 68 85 50 Q 75 62 50 62 Q 25 62 15 50 Z" fill="#102A3A"/>
+                        <!-- Sun -->
+                        <circle cx="70" cy="42" r="8" fill="#E85A24"/>
+                        <!-- Oar -->
+                        <line x1="58" y1="35" x2="68" y2="58" stroke="#102A3A" stroke-width="3" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-2xl font-black tracking-wider text-kanoa-navy">KANOA</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-kanoa-orange -mt-1">Acompañamiento</span>
+                </div>
+            </a>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center gap-8 font-medium text-gray-600">
+                <a href="#inicio" class="hover:text-kanoa-orange transition-colors py-2">Inicio</a>
+                <a href="#nosotros" class="hover:text-kanoa-orange transition-colors py-2">Nosotros</a>
+                <a href="#servicios" class="hover:text-kanoa-orange transition-colors py-2">Servicios</a>
+                <a href="#encuesta" class="bg-kanoa-orange text-white px-5 py-2.5 rounded-full font-semibold hover:bg-kanoa-orange-hover transition-all shadow-md hover:shadow-lg focus:ring-2 focus:ring-offset-2 focus:ring-kanoa-orange">
+                    Encuesta de Satisfacción
+                </a>
+            </nav>
+
+            <!-- Mobile Menu Button -->
+            <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg text-kanoa-navy hover:bg-gray-100 focus:outline-none" aria-label="Abrir Menú">
+                <i class="fa-solid fa-bars text-2xl"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-gray-200 px-4 pt-2 pb-6 space-y-3">
+            <a href="#inicio" class="block py-2 text-gray-700 hover:text-kanoa-orange font-medium">Inicio</a>
+            <a href="#nosotros" class="block py-2 text-gray-700 hover:text-kanoa-orange font-medium">Nosotros</a>
+            <a href="#servicios" class="block py-2 text-gray-700 hover:text-kanoa-orange font-medium">Servicios</a>
+            <a href="#encuesta" class="block w-full text-center bg-kanoa-orange text-white py-3 rounded-xl font-semibold shadow-md">
+                Encuesta de Satisfacción
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main>
+        <!-- Hero Section -->
+        <section id="inicio" class="relative overflow-hidden bg-gradient-to-b from-kanoa-orange-light/50 via-white to-kanoa-bg pt-12 pb-20 md:pt-20 md:pb-28">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <!-- Left Column Text -->
+                    <div class="space-y-6 text-center md:text-left">
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-kanoa-orange/10 text-kanoa-orange font-semibold text-sm">
+                            <i class="fa-solid fa-heart text-xs"></i>
+                            <span>Inclusión & Acompañamiento Humano</span>
+                        </div>
+                        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-kanoa-navy leading-tight">
+                            Navegamos juntos hacia tus <span class="text-kanoa-orange">compras con tranquilidad.</span>
+                        </h1>
+                        <p class="text-lg sm:text-xl text-gray-600 leading-relaxed font-normal">
+                            Ofrecemos asistencia personalizada a personas con movilidad reducida y adultos mayores durante sus recorridos por el supermercado. Facilitamos tu autonomía de forma accesible, digna y cercana.
+                        </p>
+                        <div class="pt-4 flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                            <a href="#encuesta" class="pulse-btn inline-flex items-center justify-center px-8 py-4 bg-kanoa-orange text-white font-bold text-lg rounded-2xl shadow-lg hover:bg-kanoa-orange-hover hover:shadow-xl transition-all">
+                                <i class="fa-solid fa-clipboard-list mr-2"></i>
+                                Califica Tu Experiencia
+                            </a>
+                            <a href="#nosotros" class="inline-flex items-center justify-center px-8 py-4 bg-white text-kanoa-navy border-2 border-kanoa-navy/10 font-bold text-lg rounded-2xl hover:bg-gray-50 transition-all">
+                                Conocer Más
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Right Column Visual Graphic -->
+                    <div class="relative flex justify-center">
+                        <div class="w-full max-w-md bg-white p-8 rounded-3xl shadow-xl border border-gray-100 relative z-10 text-center">
+                            <div class="w-24 h-24 mx-auto mb-4 bg-kanoa-orange-light rounded-full flex items-center justify-center text-kanoa-orange">
+                                <i class="fa-solid fa-wheelchair-move text-4xl"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-kanoa-navy mb-2">Tu Asistente en Kanoa</h2>
+                            <p class="text-gray-600 text-sm mb-6">
+                                Te apoyamos desde la selección de productos hasta la descarga de tus compras. ¡Te acompañamos en cada etapa del viaje!
+                            </p>
+                            <div class="grid grid-cols-3 gap-3 text-center border-t border-gray-100 pt-4">
+                                <div class="p-2">
+                                    <span class="block text-xl font-bold text-kanoa-orange">100%</span>
+                                    <span class="text-xs text-gray-500">Cálido</span>
+                                </div>
+                                <div class="p-2 border-x border-gray-100">
+                                    <span class="block text-xl font-bold text-kanoa-navy">Seguro</span>
+                                    <span class="text-xs text-gray-500">Recorrido</span>
+                                </div>
+                                <div class="p-2">
+                                    <span class="block text-xl font-bold text-kanoa-orange">Accesible</span>
+                                    <span class="text-xs text-gray-500">Para todos</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Background Glow Elements -->
+                        <div class="absolute -top-6 -right-6 w-72 h-72 bg-kanoa-orange/20 rounded-full blur-3xl -z-0"></div>
+                        <div class="absolute -bottom-6 -left-6 w-72 h-72 bg-kanoa-navy/10 rounded-full blur-3xl -z-0"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Nosotros / Acerca de Kanoa -->
+        <section id="nosotros" class="py-16 bg-white border-y border-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-12">
+                    <h2 class="text-3xl font-extrabold text-kanoa-navy sm:text-4xl">¿Por qué Kanoa?</h2>
+                    <p class="mt-4 text-lg text-gray-600">
+                        Así como una canoa brinda estabilidad y dirección en el agua, en Kanoa guiamos y apoyamos a quienes necesitan asistencia para realizar sus compras habituales de forma autónoma.
+                    </p>
+                </div>
+
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Card 1 -->
+                    <div class="p-6 bg-kanoa-bg rounded-2xl border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="w-12 h-12 bg-kanoa-orange/10 text-kanoa-orange rounded-xl flex items-center justify-center text-xl mb-4">
+                            <i class="fa-solid fa-hands-holding-child"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-kanoa-navy mb-2">Acompañamiento Paciente</h3>
+                        <p class="text-gray-600 text-sm leading-relaxed">
+                            Nuestros guías capacitados brindan paciencia, amabilidad y atención personalizada a cada usuario durante todo el trayecto.
+                        </p>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="p-6 bg-kanoa-bg rounded-2xl border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="w-12 h-12 bg-kanoa-navy/10 text-kanoa-navy rounded-xl flex items-center justify-center text-xl mb-4">
+                            <i class="fa-solid fa-basket-shopping"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-kanoa-navy mb-2">Autonomía y Confort</h3>
+                        <p class="text-gray-600 text-sm leading-relaxed">
+                            Ayudamos a alcanzar repisas, empujar el carrito o empacar bolsas, asegurando que mantengas total control de lo que deseas comprar.
+                        </p>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="p-6 bg-kanoa-bg rounded-2xl border border-gray-100 hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1">
+                        <div class="w-12 h-12 bg-kanoa-orange/10 text-kanoa-orange rounded-xl flex items-center justify-center text-xl mb-4">
+                            <i class="fa-solid fa-heart-pulse"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-kanoa-navy mb-2">Tranquilidad Familiar</h3>
+                        <p class="text-gray-600 text-sm leading-relaxed">
+                            Generamos confianza y tranquilidad tanto para los adultos mayores como para sus familias que confían en nuestro apoyo.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Feedback Form Section -->
+        <section id="encuesta" class="py-20 bg-kanoa-bg">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <!-- Form Header -->
+                <div class="bg-kanoa-navy text-white rounded-t-3xl p-8 sm:p-10 text-center relative overflow-hidden">
+                    <div class="relative z-10">
+                        <span class="bg-kanoa-orange text-white text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full inline-block mb-3">
+                            Tu opinión nos impulsa
+                        </span>
+                        <h2 class="text-3xl sm:text-4xl font-extrabold mb-3">Encuesta de Satisfacción</h2>
+                        <p class="text-gray-300 max-w-xl mx-auto text-sm sm:text-base">
+                            Queremos mejorar cada día. Por favor tómate un minuto para responder las siguientes preguntas sobre tu experiencia con Kanoa.
+                        </p>
+                    </div>
+                    <!-- Background SVG Decorative Accent -->
+                    <svg class="absolute right-0 bottom-0 opacity-10 w-64 h-64 translate-x-12 translate-y-12" viewBox="0 0 100 100" fill="white">
+                        <path d="M 15 50 Q 50 68 85 50 Q 75 62 50 62 Q 25 62 15 50 Z"/>
+                    </svg>
+                </div>
+
+                <!-- Form Card -->
+                <div class="bg-white rounded-b-3xl shadow-xl p-6 sm:p-10 border-x border-b border-gray-100">
+                    <form id="kanoa-feedback-form" onsubmit="handleFormSubmit(event)" class="space-y-10">
+                        
+                        <!-- Question 1: Recorrido supermercado -->
+                        <div class="space-y-3">
+                            <label class="block text-lg font-bold text-kanoa-navy">
+                                1. ¿Cómo te sentiste durante el recorrido por el supermercado? <span class="text-kanoa-orange">*</span>
+                            </label>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 rating-option">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p1_recorrido" value="Mal" required class="sr-only">
+                                    <div class="p-4 border-2 border-gray-200 rounded-2xl text-center hover:border-kanoa-orange transition-all flex flex-col items-center gap-2">
+                                        <span class="text-3xl">🙁</span>
+                                        <span class="font-semibold text-sm">Mal</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p1_recorrido" value="Regular" class="sr-only">
+                                    <div class="p-4 border-2 border-gray-200 rounded-2xl text-center hover:border-kanoa-orange transition-all flex flex-col items-center gap-2">
+                                        <span class="text-3xl">😐</span>
+                                        <span class="font-semibold text-sm">Regular</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p1_recorrido" value="Bien" class="sr-only">
+                                    <div class="p-4 border-2 border-gray-200 rounded-2xl text-center hover:border-kanoa-orange transition-all flex flex-col items-center gap-2">
+                                        <span class="text-3xl">🙂</span>
+                                        <span class="font-semibold text-sm">Bien</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p1_recorrido" value="Excelente" class="sr-only">
+                                    <div class="p-4 border-2 border-gray-200 rounded-2xl text-center hover:border-kanoa-orange transition-all flex flex-col items-center gap-2">
+                                        <span class="text-3xl">😀</span>
+                                        <span class="font-semibold text-sm">Excelente</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question 2: Satisfacción General -->
+                        <div class="space-y-3">
+                            <label class="block text-lg font-bold text-kanoa-navy">
+                                2. ¿Qué tan satisfecho/a quedaste con el servicio de Kanoa? <span class="text-kanoa-orange">*</span>
+                            </label>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 rating-option">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p2_satisfaccion" value="Mal" required class="sr-only">
+                                    <div class="p-4 border-2 border-gray-200 rounded-2xl text-center hover:border-kanoa-orange transition-all flex flex-col items-center gap-2">
+                                        <i class="fa-solid fa-thumbs-down text-2xl text-gray-400"></i>
+                                        <span class="font-semibold text-sm">Insatisfecho/a (Mal)</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p2_satisfaccion" value="Regular" class="sr-only">
+                                    <div class="p-4 border-2 border-gray-200 rounded-2xl text-center hover:border-kanoa-orange transition-all flex flex-col items-center gap-2">
+                                        <i class="fa-solid fa-minus text-2xl text-gray-400"></i>
+                                        <span class="font-semibold text-sm">Poco Satisfecho/a (Regular)</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p2_satisfaccion" value="Bien" class="sr-only">
+                                    <div class="p-4 border-2 border-gray-200 rounded-2xl text-center hover:border-kanoa-orange transition-all flex flex-col items-center gap-2">
+                                        <i class="fa-solid fa-thumbs-up text-2xl text-gray-400"></i>
+                                        <span class="font-semibold text-sm">Satisfecho/a (Bien)</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p2_satisfaccion" value="Excelente" class="sr-only">
+                                    <div class="p-4 border-2 border-gray-200 rounded-2xl text-center hover:border-kanoa-orange transition-all flex flex-col items-center gap-2">
+                                        <i class="fa-solid fa-star text-2xl text-gray-400"></i>
+                                        <span class="font-semibold text-sm">Muy Satisfecho/a (Excelente)</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question 3: Kanoa Icon Rating (1 to 5) -->
+                        <div class="space-y-3">
+                            <label class="block text-lg font-bold text-kanoa-navy">
+                                3. ¿Qué calificación le pondrías a la atención que recibiste? <span class="text-kanoa-orange">*</span>
+                            </label>
+                            <p class="text-xs text-gray-500">Haz clic en los íconos de Kanoa para asignar tu puntuación del 1 al 5:</p>
+                            
+                            <div class="flex items-center justify-between sm:justify-start sm:gap-6 py-2 px-4 bg-kanoa-bg rounded-2xl border border-gray-200">
+                                <input type="hidden" id="p3_calificacion" name="p3_calificacion" value="0" required>
+                                
+                                <!-- 5 Kanoa Custom SVG Canoe Icons -->
+                                <template id="kanoa-star">
+                                    <!-- Dynamic script handles interactive click -->
+                                </template>
+                                
+                                <div id="kanoa-rating-container" class="flex gap-2 sm:gap-4">
+                                    <!-- Buttons generated with JS -->
+                                </div>
+                                <span id="rating-label" class="font-bold text-kanoa-navy text-sm sm:text-base min-w-[90px]">0 / 5</span>
+                            </div>
+                        </div>
+
+                        <!-- Question 4: Recomendarías Kanoa (Categorías Sugeridas) -->
+                        <div class="space-y-3">
+                            <label class="block text-lg font-bold text-kanoa-navy">
+                                4. ¿Le recomendarías Kanoas a alguien que necesite este apoyo? <span class="text-kanoa-orange">*</span>
+                            </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 rating-option">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p4_recomendar" value="Definitivamente no" required class="sr-only">
+                                    <div class="p-3.5 border-2 border-gray-200 rounded-xl text-left hover:border-kanoa-orange transition-all flex items-center gap-3">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-400 flex-shrink-0"></span>
+                                        <span class="font-medium text-sm">Definitivamente no</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p4_recomendar" value="Tal vez / Probablemente no" class="sr-only">
+                                    <div class="p-3.5 border-2 border-gray-200 rounded-xl text-left hover:border-kanoa-orange transition-all flex items-center gap-3">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-400 flex-shrink-0"></span>
+                                        <span class="font-medium text-sm">Tal vez / Probablemente no</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p4_recomendar" value="Probablemente sí" class="sr-only">
+                                    <div class="p-3.5 border-2 border-gray-200 rounded-xl text-left hover:border-kanoa-orange transition-all flex items-center gap-3">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-400 flex-shrink-0"></span>
+                                        <span class="font-medium text-sm">Probablemente sí</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p4_recomendar" value="¡Totalmente seguro!" class="sr-only">
+                                    <div class="p-3.5 border-2 border-gray-200 rounded-xl text-left hover:border-kanoa-orange transition-all flex items-center gap-3">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-400 flex-shrink-0"></span>
+                                        <span class="font-medium text-sm font-semibold">¡Totalmente seguro!</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question 5: Volverías a utilizar el servicio (Categorías Sugeridas) -->
+                        <div class="space-y-3">
+                            <label class="block text-lg font-bold text-kanoa-navy">
+                                5. ¿Volverías a utilizar el servicio de Kanoa? <span class="text-kanoa-orange">*</span>
+                            </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 rating-option">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p5_volver" value="No volvería" required class="sr-only">
+                                    <div class="p-3.5 border-2 border-gray-200 rounded-xl text-left hover:border-kanoa-orange transition-all flex items-center gap-3">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-400 flex-shrink-0"></span>
+                                        <span class="font-medium text-sm">No volvería</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p5_volver" value="Tal vez / En otra ocasión" class="sr-only">
+                                    <div class="p-3.5 border-2 border-gray-200 rounded-xl text-left hover:border-kanoa-orange transition-all flex items-center gap-3">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-400 flex-shrink-0"></span>
+                                        <span class="font-medium text-sm">Tal vez / En otra ocasión</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p5_volver" value="Sí, sin duda" class="sr-only">
+                                    <div class="p-3.5 border-2 border-gray-200 rounded-xl text-left hover:border-kanoa-orange transition-all flex items-center gap-3">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-400 flex-shrink-0"></span>
+                                        <span class="font-medium text-sm">Sí, sin duda</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="p5_volver" value="Definitivamente sí, será mi opción principal" class="sr-only">
+                                    <div class="p-3.5 border-2 border-gray-200 rounded-xl text-left hover:border-kanoa-orange transition-all flex items-center gap-3">
+                                        <span class="w-4 h-4 rounded-full border-2 border-gray-400 flex-shrink-0"></span>
+                                        <span class="font-medium text-sm font-semibold">Definitivamente sí, será mi opción principal</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question 6: Comentarios Abiertos -->
+                        <div class="space-y-3">
+                            <label for="p6_mejoras" class="block text-lg font-bold text-kanoa-navy">
+                                6. ¿Qué cambiarías o mejorarías de nuestro servicio?
+                            </label>
+                            <textarea id="p6_mejoras" name="p6_mejoras" rows="4" 
+                                class="w-full p-4 border-2 border-gray-200 rounded-2xl focus:border-kanoa-orange focus:ring-0 transition-all resize-none text-gray-700"
+                                placeholder="Escribe tus comentarios o sugerencias aquí..."></textarea>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="pt-4">
+                            <button type="submit" class="w-full py-4 bg-kanoa-orange text-white font-bold text-lg rounded-2xl shadow-lg hover:bg-kanoa-orange-hover hover:shadow-xl transition-all flex items-center justify-center gap-3">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                Enviar Encuesta
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-kanoa-navy text-white pt-12 pb-8 border-t border-kanoa-navy-light">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-kanoa-orange text-white">
+                            <i class="fa-solid fa-water text-xl"></i>
+                        </div>
+                        <span class="text-2xl font-black tracking-wider text-white">KANOA</span>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Proyecto de emprendimiento enfocado en el acompañamiento e inclusión durante el proceso de compra para personas adultas mayores y de movilidad reducida.
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-bold mb-4 text-kanoa-orange">Enlaces Rápidos</h4>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li><a href="#inicio" class="hover:text-white transition-colors">Inicio</a></li>
+                        <li><a href="#nosotros" class="hover:text-white transition-colors">Nosotros</a></li>
+                        <li><a href="#encuesta" class="hover:text-white transition-colors">Encuesta de Satisfacción</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-bold mb-4 text-kanoa-orange">Contacto</h4>
+                    <p class="text-sm text-gray-300 mb-2"><i class="fa-solid fa-envelope mr-2 text-kanoa-orange"></i> contacto@kanoa-proyecto.com</p>
+                    <p class="text-sm text-gray-300 mb-4"><i class="fa-solid fa-phone mr-2 text-kanoa-orange"></i> +52 (55) 1234-5678</p>
+                    <div class="flex gap-4">
+                        <a href="#" class="w-9 h-9 rounded-full bg-kanoa-navy-light flex items-center justify-center text-gray-300 hover:bg-kanoa-orange hover:text-white transition-all"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-kanoa-navy-light flex items-center justify-center text-gray-300 hover:bg-kanoa-orange hover:text-white transition-all"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-kanoa-navy-light flex items-center justify-center text-gray-300 hover:bg-kanoa-orange hover:text-white transition-all"><i class="fa-brands fa-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-kanoa-navy-light pt-6 text-center text-xs text-gray-400">
+                <p>&copy; 2026 Kanoa. Todos los derechos reservados. Proyecto de Emprendimiento Social.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Success Modal Popup -->
+    <div id="success-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl transform scale-95 transition-transform duration-300">
+            <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h3 class="text-2xl font-extrabold text-kanoa-navy mb-2">¡Muchas Gracias!</h3>
+            <p class="text-gray-600 mb-6 text-sm leading-relaxed">
+                Tus respuestas han sido registradas con éxito. Nos ayudan enormemente a seguir navegando con excelencia y calidad humana en Kanoa.
+            </p>
+            <button onclick="closeModal()" class="w-full py-3.5 bg-kanoa-orange text-white font-bold rounded-xl hover:bg-kanoa-orange-hover transition-colors shadow-md">
+                Aceptar
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script src="js/script.js"></script>
+    <script src="js/md.js"></script>
+</body>
+</html>
