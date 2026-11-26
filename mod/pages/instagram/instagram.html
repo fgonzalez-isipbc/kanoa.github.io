@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Perfil social demo</title>
+    <style>
+      *{box-sizing:border-box}body{margin:0;font:14px Arial,sans-serif;color:#262626;background:white}button,a{cursor:pointer}button{font:inherit;border:0;border-radius:8px;padding:9px 16px;font-weight:600;background:#efefef;color:inherit}a{color:#00376b;text-decoration:none}aside{position:fixed;width:245px;height:100vh;border-right:1px solid #dbdbdb;padding:28px 20px;display:flex;flex-direction:column;gap:32px}aside h2{font:italic bold 29px Georgia;margin:0}small{font:11px Arial;color:#737373}nav{display:grid;gap:16px}nav button{text-align:left;background:white;font-size:17px}nav button:hover{background:#f4f4f4}aside>small{margin-top:auto}main{max-width:975px;margin:auto;padding:24px 20px 40px;margin-left:max(245px,calc((100vw - 975px + 245px)/2))}#notice{font-size:12px;color:#737373;text-align:right}header{display:flex;gap:80px;padding:35px 40px;align-items:center}#avatar{width:150px;height:150px;border-radius:50%;object-fit:cover;background:#eee}header section{flex:1;min-width:0}.heading{display:flex;align-items:center;gap:12px;flex-wrap:wrap}h1{font-size:21px;font-weight:400;margin:0;overflow-wrap:anywhere}#follow{background:#0095f6;color:white}#contact{background:#efefef;padding:9px 16px;border-radius:8px;color:#262626;font-weight:bold}#stats{display:flex;gap:25px;margin:24px 0}#category{color:#737373;margin-top:5px}#bio{white-space:pre-wrap;margin:6px 0}#highlights{display:flex;gap:30px;overflow:auto;padding:12px 35px 32px}.highlight{background:none;min-width:85px;padding:0}.highlight img{display:block;width:78px;height:78px;border-radius:50%;object-fit:cover;border:3px solid white;outline:1px solid #ddd;margin:3px auto 12px}.tabs{border-top:1px solid #ddd;display:flex;justify-content:center;gap:35px}.tabs button{border-radius:0;background:white;font-size:12px;color:#737373;padding:17px 4px}.tabs button.active{border-top:1px solid black;color:black}#grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}.tile{position:relative;aspect-ratio:3/4;padding:0;border-radius:0;overflow:hidden;background:#eee}.tile img,.tile video{width:100%;height:100%;object-fit:cover;display:block}.overlay{position:absolute;inset:0;background:#0005;color:white;display:grid;place-items:center;opacity:0}.tile:hover .overlay,.tile:focus-visible .overlay{opacity:1}footer{text-align:center;color:#737373;font-size:12px;padding:30px}dialog{border:0;padding:0;max-width:min(950px,95vw);width:900px;max-height:90vh}dialog::backdrop{background:#000a}#close{position:absolute;right:8px;top:8px;z-index:2;font-size:22px}#detail{display:flex;min-height:280px}#detail>img,#detail>video{width:58%;object-fit:contain;background:#111;max-height:80vh}.details{padding:30px 20px;flex:1;overflow:auto;max-height:80vh;white-space:pre-wrap}.details button{margin:10px 0}.comment{border-top:1px solid #eee;padding:12px 0}.empty{grid-column:1/-1;text-align:center;padding:50px;color:#777}@media(max-width:1050px){aside{width:80px;padding:20px 8px}aside h2{font-size:14px}nav button{font-size:12px;padding:8px 2px}main{margin-left:80px}header{gap:35px}}@media(max-width:650px){aside{position:static;width:auto;height:auto;border:0;border-bottom:1px solid #ddd;padding:12px;gap:0}aside h2{font-size:24px}aside nav,aside>small{display:none}main{margin:0;padding:12px 0}#notice{padding:0 12px}header{padding:20px 12px;gap:15px;align-items:flex-start}#avatar{width:78px;height:78px}#stats{gap:10px;font-size:12px;margin:15px 0}#highlights{padding:10px 12px 25px;gap:15px}.tabs{gap:15px}#detail{display:block}#detail>img,#detail>video{width:100%;max-height:48vh}.details{max-height:35vh}.tile{aspect-ratio:3/4}}
+
+    </style>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <aside>
+      <h2>Instagram <small>Demo</small></h2>
+      <nav id="nav">
+        <button data-tab="POST">⌂ Inicio</button
+        ><button id="search">⌕ Buscar</button
+        ><button data-tab="REEL">▷ Reels</button
+        ><button data-tab="TAGGED">◎ Etiquetados</button
+        ><button data-tab="POST">◉ Perfil</button>
+      </nav>
+      <small>Simulación independiente · No afiliada a Meta</small>
+    </aside>
+    <main>
+      <div id="notice" role="status">Datos de ejemplo</div>
+      <header>
+        <img id="avatar" alt="Foto de perfil" />
+        <section>
+          <div class="heading">
+            <h1 id="username"></h1>
+            <button id="follow">Seguir</button
+            ><a id="contact" hidden>Mensaje</a>
+          </div>
+          <div id="stats"></div>
+          <strong id="name"></strong>
+          <div id="category"></div>
+          <p id="bio"></p>
+          <a id="website" target="_blank" rel="noopener"></a>
+        </section>
+      </header>
+      <div id="highlights"></div>
+      <div class="tabs">
+        <button data-tab="POST">▦ PUBLICACIONES</button
+        ><button data-tab="REEL">▷ REELS</button
+        ><button data-tab="TAGGED">◎ ETIQUETADAS</button>
+      </div>
+      <div id="grid"></div>
+      <footer>Perfil de demostración · Métricas simuladas</footer>
+    </main>
+    <dialog id="modal">
+      <button id="close" aria-label="Cerrar">×</button>
+      <div id="detail"></div>
+    </dialog>
+    <script>
+      const API_URL = 'https://script.google.com/macros/s/AKfycbyNNI2VzYnUsolt97knuPUjmezIgqKAy02Cp-lsKl3WR21iJazmPMZ0E7-pMwZKG679TQ/exec'; // URL /exec de Apps Script
+const $=id=>document.getElementById(id);
+const photo=(id)=>`https://picsum.photos/id/${id}/800/1000`;
+let data={config:{username:'mi.empresa',name:'Mi empresa',category:'Empresa de servicios',bio:'Bienvenidos a nuestro perfil de demostración.\nConoce nuestros proyectos.',avatar:photo(64),followers:1250,following:120,website:'',email:''},posts:[10,20,29,42,48,60,76,84,96].map((n,i)=>({id_post:'P'+i,type:'POST',media_type:'IMAGE',media_url:photo(n),caption:'Publicación de ejemplo '+(i+1),likes:20+i,date:'2026-11-24',status:'ACTIVE'})),highlights:[{id_highlight:'H1',title:'Nosotros',cover_url:photo(20),status:'ACTIVE'}],stories:[{id_highlight:'H1',media_url:photo(20),media_type:'IMAGE',caption:'Nuestra historia',status:'ACTIVE'}],comments:[]};
+let tab='POST',following=false,query='',liked=new Set();
+function url(v){try{let u=new URL(String(v));return ['https:','http:'].includes(u.protocol)?u.href:''}catch{return ''}}
+function active(r){return String(r.status).toUpperCase()==='ACTIVE'}
+function el(tag,text,cls){let e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e}
+function media(r,controls=false){let video=String(r.media_type).toUpperCase()==='VIDEO';let e=el(video?'video':'img');e.src=url(!controls&&r.thumbnail_url?r.thumbnail_url:r.media_url);if(video&&(!r.thumbnail_url||controls)){e.controls=controls;e.muted=!controls;e.preload='metadata';e.playsInline=true}else if(video&&!controls&&r.thumbnail_url){e=el('img');e.src=url(r.thumbnail_url)}if(e.tagName==='IMG'){e.alt=String(r.caption||'Contenido multimedia');e.loading='lazy'}return e}
+function render(){let c=data.config;$('avatar').src=url(c.avatar);for(let k of ['username','name','category','bio'])$(k).textContent=c[k]||'';let w=url(c.website);$('website').textContent=w;$('website').href=w||'#';$('website').hidden=!w;let email=String(c.email||'');$('contact').hidden=!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);$('contact').href='mailto:'+encodeURIComponent(email);$('stats').replaceChildren(...[[data.posts.filter(p=>active(p)&&p.type!=='TAGGED').length,'publicaciones'],[(Number(c.followers)||0)+(following?1:0),'seguidores'],[c.following||0,'seguidos']].map(([n,t])=>el('span',`${n} ${t}`)));$('follow').textContent=following?'Siguiendo':'Seguir';$('highlights').replaceChildren();data.highlights.filter(active).forEach(h=>{let b=el('button',null,'highlight'),img=el('img');img.src=url(h.cover_url);img.alt='';b.append(img,el('span',h.title));b.onclick=()=>story(h,0);$('highlights').append(b)});renderGrid()}
+function renderGrid(){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));let rows=data.posts.filter(p=>active(p)&&(tab==='POST'?['POST','REEL'].includes(p.type):p.type===tab)&&String(p.caption||'').toLowerCase().includes(query));rows.sort((a,b)=>String(b.date).localeCompare(String(a.date)));$('grid').replaceChildren();if(!rows.length)$('grid').append(el('div','No hay publicaciones','empty'));rows.forEach(p=>{let b=el('button',null,'tile');b.setAttribute('aria-label',p.caption||'Abrir publicación');b.append(media(p),el('span',`♥ ${(Number(p.likes)||0)+(liked.has(p.id_post)?1:0)}  ◯ ${data.comments.filter(c=>c.id_post===p.id_post&&active(c)).length}`,'overlay'));b.onclick=()=>post(p);$('grid').append(b)})}
+function show(r,body){$('detail').replaceChildren(media(r,true),body);if(!$('modal').open)$('modal').showModal()}
+function post(p){let d=el('section',null,'details');d.append(el('strong',data.config.username),el('p',p.caption),el('small',p.date));let b=el('button',`${liked.has(p.id_post)?'♥':'♡'} ${(Number(p.likes)||0)+(liked.has(p.id_post)?1:0)} Me gusta`);b.onclick=()=>{liked.has(p.id_post)?liked.delete(p.id_post):liked.add(p.id_post);post(p);renderGrid()};d.append(b);data.comments.filter(c=>active(c)&&c.id_post===p.id_post).forEach(c=>{let x=el('div',null,'comment');x.append(el('strong',c.author),el('p',c.text));d.append(x)});show(p,d)}
+function story(h,i){let rows=data.stories.filter(s=>active(s)&&s.id_highlight===h.id_highlight);if(!rows.length)return;let d=el('section',null,'details');d.append(el('h2',h.title),el('p',rows[i].caption),el('p',`${i+1} / ${rows.length}`));let prev=el('button','Anterior'),next=el('button','Siguiente');prev.disabled=i===0;next.disabled=i===rows.length-1;prev.onclick=()=>story(h,i-1);next.onclick=()=>story(h,i+1);d.append(prev,next);show(rows[i],d)}
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;query='';renderGrid()});$('follow').onclick=()=>{following=!following;render()};$('close').onclick=()=>$('modal').close();$('search').onclick=()=>{query=(prompt('Buscar en publicaciones','')||'').toLowerCase();renderGrid()};render();if(API_URL)fetch(API_URL,{credentials:'omit'}).then(r=>{if(!r.ok)throw Error('HTTP');return r.json()}).then(r=>{if(!r.config||!['posts','highlights','stories','comments'].every(k=>Array.isArray(r[k])))throw Error('Formato');data=r;render();$('notice').textContent='Perfil de demostración · Datos de Sheets'}).catch(()=>{$('notice').textContent='No se pudo conectar a Sheets; mostrando datos de ejemplo'});
+
+    </script>
+  </body>
+</html>
