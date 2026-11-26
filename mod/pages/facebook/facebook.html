@@ -4,7 +4,254 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Página demo</title>
-    <link rel="stylesheet" href="css/pages/facebook.css">
+    <style>
+      * {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #f0f2f5;
+  color: #050505;
+  font:
+    15px Arial,
+    sans-serif;
+  --blue: #0866ff;
+}
+header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: white;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 24px;
+  box-shadow: 0 1px 5px #0002;
+}
+.logo {
+  background: var(--blue);
+  color: white;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  font-size: 42px;
+  line-height: 48px;
+  overflow: hidden;
+}
+input {
+  border: 0;
+  background: #f0f2f5;
+  border-radius: 24px;
+  padding: 12px;
+  min-width: 0;
+}
+.demo {
+  margin-left: auto;
+  font-size: 12px;
+  color: #65676b;
+}
+main {
+  max-width: 1100px;
+  margin: auto;
+}
+.hero,
+.card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px #0002;
+}
+.hero {
+  overflow: hidden;
+}
+#cover {
+  width: 100%;
+  height: 330px;
+  object-fit: cover;
+  background: #dce5f0;
+}
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 30px;
+}
+.identity img {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border: 4px solid white;
+  border-radius: 50%;
+  margin-top: -65px;
+  background: #dce5f0;
+  z-index: 1;
+}
+.identity h1 {
+  margin: 0;
+  font-size: 32px;
+}
+.identity p {
+  margin: 6px 0;
+  color: #65676b;
+}
+.btn {
+  margin-left: auto;
+  background: var(--blue);
+  color: white;
+  text-decoration: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: bold;
+}
+nav {
+  border-top: 1px solid #ddd;
+  margin: 0 24px;
+  display: flex;
+}
+button {
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: #65676b;
+  padding: 14px;
+  font-weight: bold;
+}
+button.active {
+  color: var(--blue);
+  border-bottom: 3px solid var(--blue);
+}
+.layout {
+  display: grid;
+  grid-template-columns: 38% 1fr;
+  gap: 16px;
+  padding: 16px;
+}
+.card {
+  padding: 16px;
+  margin-bottom: 16px;
+}
+h2 {
+  font-size: 20px;
+  margin: 0 0 16px;
+}
+p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.gallery img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 5px;
+}
+.posthead {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.posthead img,
+.comment img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #ddd;
+}
+.muted {
+  color: #65676b;
+  font-size: 13px;
+}
+.media {
+  width: 100%;
+  max-height: 650px;
+  object-fit: contain;
+  background: #f0f2f5;
+}
+.actions {
+  display: flex;
+  justify-content: space-around;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+}
+.metrics {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  color: #65676b;
+}
+.comment {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.bubble {
+  background: #f0f2f5;
+  padding: 10px;
+  border-radius: 14px;
+  flex: 1;
+}
+.bubble p {
+  margin: 4px 0;
+}
+.detail {
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+#status {
+  padding: 10px;
+  color: #65676b;
+}
+#status:empty {
+  display: none;
+}
+[hidden] {
+  display: none !important;
+}
+@media (max-width: 700px) {
+  header {
+    padding: 8px;
+    gap: 8px;
+  }
+  header input {
+    width: 35%;
+  }
+  .demo {
+    font-size: 10px;
+  }
+  #cover {
+    height: 190px;
+  }
+  .identity {
+    padding: 12px;
+    flex-wrap: wrap;
+  }
+  .identity img {
+    width: 90px;
+    height: 90px;
+    margin-top: -35px;
+  }
+  .identity h1 {
+    font-size: 24px;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 8px;
+  }
+  nav {
+    margin: 0;
+  }
+  .btn {
+    margin-left: 0;
+  }
+}
+
+    </style>
   </head>
   <body>
     <header>
@@ -48,6 +295,264 @@
         <section id="feed"></section>
       </div>
     </main>
-    <script src="js/pages/facebook.controller.js"></script>
+    <script>
+      const API_URL = "https://script.google.com/macros/s/AKfycbzO7QCCg0VXgl3bp_ksoTbthJPqcovNN-B9xuE3aJcQc3IQKPT9Ede_vq84gHJDsppw_w/exec"; // Pega aquí la URL /exec de Apps Script
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, txt) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (txt != null) n.textContent = txt;
+  return n;
+};
+const placeholder =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="300"><rect width="100%" height="100%" fill="#dce5f0"/></svg>',
+  );
+function url(v) {
+  try {
+    const u = new URL(v);
+    return ["https:", "http:"].includes(u.protocol) ? u.href : "";
+  } catch {
+    return "";
+  }
+}
+function img(v, cls) {
+  const n = el("img", cls);
+  n.src = url(v) || placeholder;
+  n.alt = "Imagen de demostración";
+  n.onerror = () => {
+    n.onerror = null;
+    n.src = placeholder;
+  };
+  return n;
+}
+const demo = {
+  config: {
+    page_name: "Mi empresa",
+    page_category: "Empresa de servicios",
+    page_description: "Bienvenidos a nuestra página de demostración.",
+    followers: 1250,
+    following: 120,
+  },
+  posts: [
+    {
+      id_post: "P001",
+      post_date: "2026-11-24",
+      post_text: "¡Bienvenidos! Esta es una publicación de ejemplo.",
+      likes: 128,
+      shares: 4,
+      status: "ACTIVE",
+    },
+  ],
+  media: [],
+  comments: [
+    {
+      id_post: "P001",
+      author: "Usuario demo",
+      comment_text: "Excelente servicio",
+    },
+  ],
+};
+let data = demo,
+  tab = "posts";
+const liked = new Set();
+function render() {
+  const c = data.config;
+  $("name").textContent = c.page_name || "Página demo";
+  document.title = $("name").textContent + " · Demo";
+  $("counts").textContent =
+    `${c.followers || 0} seguidores · ${c.following || 0} seguidos`;
+  $("category").textContent = c.page_category || "";
+  $("description").textContent = c.page_description || "";
+  $("cover").src = url(c.cover_image) || placeholder;
+  $("avatar").src = url(c.profile_image) || placeholder;
+  if (/^#[0-9a-f]{6}$/i.test(c.primary_color || ""))
+    document.body.style.setProperty("--blue", c.primary_color);
+  $("details").replaceChildren();
+  for (const [k, label] of Object.entries({
+    address: "Ubicación",
+    phone: "Teléfono",
+    email: "Correo",
+    website: "Sitio web",
+    page_username: "Usuario",
+  })) {
+    if (c[k]) $("details").append(el("div", "detail", label + ": " + c[k]));
+  }
+  const w = String(c.whatsapp || "").replace(/\D/g, "");
+  $("contact").hidden = !w;
+  if (w) $("contact").href = "https://wa.me/" + w;
+  $("gallery").replaceChildren(
+    ...data.media
+      .filter(
+        (m) =>
+          String(m.status).toUpperCase() === "ACTIVE" &&
+          String(m.media_type).toUpperCase() === "IMAGE",
+      )
+      .map((m) => img(m.media_url)),
+  );
+  renderFeed();
+}
+function renderFeed() {
+  const f = $("feed");
+  f.replaceChildren();
+  document
+    .querySelectorAll("nav button")
+    .forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+  if (tab === "about") {
+    const n = el("article", "card");
+    n.append(
+      el("h2", "", "Información"),
+      el("p", "", data.config.page_description || ""),
+      $("details").cloneNode(true),
+    );
+    f.append(n);
+    return;
+  }
+  if (tab === "photos") {
+    const n = el("article", "card");
+    n.append(el("h2", "", "Fotos"), $("gallery").cloneNode(true));
+    f.append(n);
+    return;
+  }
+  const q = $("search").value.toLowerCase();
+  const posts = data.posts
+    .filter(
+      (p) =>
+        String(p.status).toUpperCase() === "ACTIVE" &&
+        String(p.post_text).toLowerCase().includes(q),
+    )
+    .sort(
+      (a, b) =>
+        Number(String(b.pinned).toLowerCase() === "true") -
+          Number(String(a.pinned).toLowerCase() === "true") ||
+        new Date(b.post_date) - new Date(a.post_date),
+    );
+  if (!posts.length) f.append(el("p", "", "No hay publicaciones."));
+  for (const p of posts) {
+    const n = el("article", "card"),
+      h = el("div", "posthead"),
+      info = el("div");
+    info.append(
+      el("strong", "", data.config.page_name),
+      el(
+        "div",
+        "muted",
+        String(p.post_date || "").slice(0, 10) +
+          (String(p.pinned).toLowerCase() === "true" ? " · Fijada" : ""),
+      ),
+    );
+    h.append(img(data.config.profile_image), info);
+    n.append(h, el("p", "", p.post_text));
+    const u = url(p.media_url);
+    if (u) {
+      if (p.post_type === "VIDEO") {
+        const v = el("video", "media");
+        v.src = u;
+        v.controls = true;
+        n.append(v);
+      } else if (p.post_type === "LINK") {
+        const a = el("a", "", "Abrir enlace");
+        a.href = u;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        n.append(a);
+      } else n.append(img(u, "media"));
+    }
+    const comments = data.comments.filter(
+      (c) => String(c.id_post) === String(p.id_post),
+    );
+    const m = el("div", "metrics");
+    m.append(
+      el(
+        "span",
+        "",
+        "👍 " + ((Number(p.likes) || 0) + (liked.has(p.id_post) ? 1 : 0)),
+      ),
+      el(
+        "span",
+        "",
+        `${comments.length} comentarios · ${p.shares || 0} compartidos`,
+      ),
+    );
+    n.append(m);
+    const actions = el("div", "actions"),
+      like = el(
+        "button",
+        "",
+        liked.has(p.id_post) ? "👍 Te gusta" : "Me gusta",
+      ),
+      cb = el("button", "", "Comentarios"),
+      share = el("button", "", "Compartir");
+    like.onclick = () => {
+      liked.has(p.id_post) ? liked.delete(p.id_post) : liked.add(p.id_post);
+      renderFeed();
+    };
+    const list = el("div");
+    list.hidden = true;
+    cb.onclick = () => (list.hidden = !list.hidden);
+    share.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(location.href);
+        share.textContent = "Enlace copiado";
+      } catch {
+        share.textContent = "No se pudo copiar";
+      }
+    };
+    actions.append(like, cb, share);
+    for (const c of comments) {
+      const r = el("div", "comment"),
+        b = el("div", "bubble");
+      b.append(el("strong", "", c.author), el("p", "", c.comment_text));
+      r.append(img(c.avatar_url), b);
+      list.append(r);
+    }
+    n.append(actions, list);
+    f.append(n);
+  }
+}
+document.querySelectorAll("nav button").forEach(
+  (b) =>
+    (b.onclick = () => {
+      tab = b.dataset.tab;
+      renderFeed();
+    }),
+);
+$("search").oninput = () => {
+  tab = "posts";
+  renderFeed();
+};
+async function init() {
+  if (!API_URL) {
+    $("status").textContent =
+      "Modo de ejemplo: configura API_URL para conectar Google Sheets.";
+    render();
+    return;
+  }
+  try {
+    $("status").textContent = "Cargando…";
+    const r = await fetch(API_URL, { credentials: "omit" });
+    if (!r.ok) throw Error();
+    const d = await r.json();
+    if (
+      d.error ||
+      !d.config ||
+      !Array.isArray(d.posts) ||
+      !Array.isArray(d.media) ||
+      !Array.isArray(d.comments)
+    )
+      throw Error();
+    data = d;
+    $("status").textContent = "";
+    render();
+  } catch {
+    $("status").textContent =
+      "No se pudo conectar con Google Sheets. Se muestran datos de ejemplo.";
+    render();
+  }
+}
+init();
+
+    </script>
   </body>
 </html>
