@@ -1,0 +1,1459 @@
+/**
+ * ============================================================================
+ * KANOA 360° - RECORRIDO VIRTUAL MINIMALISTA (GRIS OSCURO Y NARANJA)
+ * ============================================================================
+ */
+
+let scene, camera, renderer;
+let currentStationIndex = 0;
+let isTransitioning = false;
+const visitedStations = new Set([0]);
+
+// Orientación de cámara (Yaw = horizontal, Pitch = vertical)
+let yaw = 0;
+let pitch = -0.05;
+let targetYaw = 0;
+let targetPitch = -0.05;
+
+// Interacción táctil / ratón
+let isDragging = false;
+let pointerDownX = 0;
+let pointerDownY = 0;
+let dragDistance = 0;
+let hasInteracted = false;
+
+// Minimapa
+let isMinimapExpanded = false;
+const minimapCanvas = document.getElementById('minimap-canvas');
+const minimapCtx = minimapCanvas.getContext('2d');
+
+// Referencias DOM
+const container = document.getElementById('canvas-container');
+const overlayLayer = document.getElementById('overlay-layer');
+const hotspotElements = new Map();
+const avatarBadgeElements = new Map();
+
+// Almacén de grupos 3D de avatares para animación idle suave
+const animatedSceneGroups = [];
+const clock = new THREE.Clock();
+
+/**
+ * DEFINICIÓN DE LAS 6 ESTACIONES OBLIGATORIAS DE CAPACITACIÓN KANOA
+ */
+const STATIONS = [
+    {
+        id: 'auditiva',
+        number: 1,
+        shortLabel: '1. Auditiva',
+        title: '1. Persona con discapacidad auditiva',
+        zone: 'Pasillo de Abarrotes • Atención en Pasillo',
+        cameraPos: new THREE.Vector3(-4.2, 1.72, 9.5),
+        scenePos: new THREE.Vector3(-5.8, 0, 5.2),
+        sceneRotY: 0.45,
+        defaultYaw: 0.35,
+        connections: ['intelectual', 'adulto_mayor'],
+        accentColor: '#F97316',
+        toolBadge: 'Comunicación Visual y Escrita',
+        problem: 'Una persona con discapacidad auditiva necesita información sobre algún producto o servicio, pero encuentra dificultades para comunicarse con los trabajadores del supermercado.',
+        solution: 'El asistente facilitará la comunicación mediante escritura, mensajes, imágenes o herramientas visuales, y brindará acompañamiento si el cliente lo requiere.',
+        dialogue: [
+            { role: 'client', name: 'Cliente', text: 'Muestra en su teléfono la imagen de un producto específico.' },
+            { role: 'kanoa', name: 'Asistente KANOA', text: 'Mantiene contacto visual y escribe en su tablet: "Está en el Pasillo 2, estante medio. ¿Le acompaño?"' }
+        ],
+        doTip: 'Mirar siempre de frente al cliente, usar mensajes breves o apoyos visuales claros y no hablar dando la espalda.'
+    },
+    {
+        id: 'intelectual',
+        number: 2,
+        shortLabel: '2. Intelectual',
+        title: '2. Persona con discapacidad intelectual',
+        zone: 'Pasillo de Ofertas • Comparación de Productos',
+        cameraPos: new THREE.Vector3(-1.2, 1.72, 2.2),
+        scenePos: new THREE.Vector3(-1.8, 0, -2.0),
+        sceneRotY: 0.15,
+        defaultYaw: 0.14,
+        connections: ['auditiva', 'motriz', 'autismo'],
+        accentColor: '#F97316',
+        toolBadge: 'Lectura Fácil y Apoyo Visual',
+        problem: 'Una persona con discapacidad intelectual puede presentar dificultades para comprender indicaciones, comparar productos, identificar promociones o realizar el proceso de compra.',
+        solution: 'Si solicita ayuda, el asistente le proporcionará información mediante instrucciones claras, lenguaje sencillo y apoyos visuales, permitiéndole tomar sus propias decisiones durante la compra.',
+        dialogue: [
+            { role: 'client', name: 'Cliente', text: '"No entiendo este cartel de 2x1. ¿Cuánto pago si llevo dos cajas?"' },
+            { role: 'kanoa', name: 'Asistente KANOA', text: '"Llevas 2 cajas y pagas solo 1 ($40 en total). ¿Cuál sabor prefieres llevar?"' }
+        ],
+        doTip: 'Usar frases cortas y apoyos visuales concretos, dando tiempo para que el cliente elija por sí mismo.'
+    },
+    {
+        id: 'autismo',
+        number: 3,
+        shortLabel: '3. Autismo',
+        title: '3. Persona con autismo',
+        zone: 'Zona de Cajas • Pasillo Tranquilo',
+        cameraPos: new THREE.Vector3(6.2, 1.72, 7.8),
+        scenePos: new THREE.Vector3(8.2, 0, 4.0),
+        sceneRotY: -0.45,
+        defaultYaw: -0.45,
+        connections: ['intelectual', 'adulto_mayor', 'motriz'],
+        accentColor: '#F97316',
+        toolBadge: 'Baja Afluencia y Ruta Directa',
+        problem: 'Una persona con autismo puede experimentar sobrecarga sensorial debido a los sonidos, las luces, las filas largas o la cantidad de personas dentro del supermercado, lo que puede dificultar su experiencia de compra.',
+        solution: 'Cuando el cliente solicite apoyo, el asistente podrá ayudarle a encontrar espacios más tranquilos, organizar un recorrido breve o localizar cajas con menor afluencia, de acuerdo con sus necesidades y preferencias.',
+        dialogue: [
+            { role: 'client', name: 'Cliente', text: '"Hay mucho ruido en las cajas centrales, necesito pagar rápido."' },
+            { role: 'kanoa', name: 'Asistente KANOA', text: '"Por este pasillo lateral llegamos directo a la Caja 4, que está libre y tranquila. Te guío por aquí."' }
+        ],
+        doTip: 'Hablar con voz calmada, anticipar los pasos del recorrido breve y evitar contacto físico sin permiso.'
+    },
+    {
+        id: 'motriz',
+        number: 4,
+        shortLabel: '4. Motriz',
+        title: '4. Persona con discapacidad motriz',
+        zone: 'Estantes Altos • Pasillo Central',
+        cameraPos: new THREE.Vector3(0.4, 1.72, -3.5),
+        scenePos: new THREE.Vector3(1.5, 0, -7.8),
+        sceneRotY: -0.25,
+        defaultYaw: -0.25,
+        connections: ['intelectual', 'visual', 'autismo'],
+        accentColor: '#F97316',
+        toolBadge: 'Preguntar Antes de Intervenir',
+        problem: 'Una persona con movilidad limitada en brazos o piernas puede tener dificultades para tomar productos de los estantes, utilizar los carritos o realizar algunas actividades durante su compra.',
+        solution: 'El asistente le brindará ayuda para alcanzar los artículos, manipular los productos y facilitar su recorrido por el establecimiento, siempre preguntando antes de intervenir.',
+        dialogue: [
+            { role: 'kanoa', name: 'Asistente KANOA', text: 'Se coloca a su altura visual: "¿Desea que le ayude a alcanzar algún artículo del estante superior?"' },
+            { role: 'client', name: 'Cliente', text: '"Sí, por favor, pásame el frasco de arriba y colócalo en mi bolsa lateral."' }
+        ],
+        doTip: 'Preguntar siempre antes de ayudar o mover una silla de ruedas, y ponerse a la altura visual del usuario.'
+    },
+    {
+        id: 'visual',
+        number: 5,
+        shortLabel: '5. Visual',
+        title: '5. Persona con discapacidad visual',
+        zone: 'Pasillo de Lácteos • Etiquetas y Precios',
+        cameraPos: new THREE.Vector3(-1.5, 1.72, -9.8),
+        scenePos: new THREE.Vector3(-2.5, 0, -13.6),
+        sceneRotY: 0.25,
+        defaultYaw: 0.22,
+        connections: ['motriz', 'adulto_mayor'],
+        accentColor: '#F97316',
+        toolBadge: 'Guía Vidente y Lectura en Voz Alta',
+        problem: 'Una persona con discapacidad visual puede tener dificultades para identificar los productos, leer los precios, distinguir las etiquetas o localizar los pasillos dentro del supermercado, lo que puede complicar su experiencia de compra.',
+        solution: 'El asistente le brindará orientación durante su recorrido, describirá los productos, leerá etiquetas y precios en voz alta y le ayudará a localizar los artículos que necesita, respetando siempre sus decisiones y preferencias.',
+        dialogue: [
+            { role: 'client', name: 'Cliente', text: '"Busco leche deslactosada de 1 litro y quisiera saber su precio."' },
+            { role: 'kanoa', name: 'Asistente KANOA', text: '"Tengo dos opciones de 1 litro frente a nosotros: una a $28 y otra a $25. ¿Cuál desea llevar?"' }
+        ],
+        doTip: 'Identificarse verbalmente, ofrecer el codo para guiar sin tomar el bastón y leer precios con precisión.'
+    },
+    {
+        id: 'adulto_mayor',
+        number: 6,
+        shortLabel: '6. Adulto Mayor',
+        title: '6. Persona adulta mayor',
+        zone: 'Frutas, Verduras y Panadería',
+        cameraPos: new THREE.Vector3(-7.8, 1.72, 1.5),
+        scenePos: new THREE.Vector3(-9.5, 0, -2.5),
+        sceneRotY: 0.35,
+        defaultYaw: 0.38,
+        connections: ['auditiva', 'visual', 'autismo'],
+        accentColor: '#F97316',
+        toolBadge: 'Acompañamiento Pausado y Autonomía',
+        problem: 'Una persona adulta mayor puede tener dificultades para recordar dónde se encuentran ciertos productos, comprender los cambios en los precios o realizar sus compras con rapidez, especialmente cuando el supermercado está muy concurrido.',
+        solution: 'El asistente le ofrecerá acompañamiento durante su compra, le ayudará a localizar los productos y le explicará con paciencia cualquier información que necesite, respetando su ritmo y autonomía.',
+        dialogue: [
+            { role: 'client', name: 'Cliente', text: '"Cambiaron de lugar el pan integral y me cuesta leer la etiqueta pequeña."' },
+            { role: 'kanoa', name: 'Asistente KANOA', text: '"Caminemos sin prisa. El pan integral está aquí a la derecha y cuesta $36. Tómese su tiempo para elegir."' }
+        ],
+        doTip: 'Adaptarse al ritmo de paso del cliente, explicar con paciencia cualquier cambio y respetar su autonomía.'
+    }
+];
+
+/**
+ * ÍCONOS SVG COMPACTOS POR ESTACIÓN
+ */
+function getStationIconSVG(id) {
+    const icons = {
+        auditiva: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>`,
+        intelectual: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>`,
+        autismo: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>`,
+        motriz: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+        visual: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>`,
+        adulto_mayor: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>`
+    };
+    return icons[id] || icons.auditiva;
+}
+
+/**
+ * ============================================================================
+ * CONSTRUCTOR DE AVATARES 3D ESTILO MANIQUÍ BLANCO MINIMALISTA (ESTUDIO)
+ * ============================================================================
+ */
+function createMannequinAvatar(options = {}) {
+    const {
+        isAssistant = false,
+        seated = false,
+        stooped = false,
+        leftArmPose = { x: 0.15, z: 0.14 },
+        rightArmPose = { x: 0.15, z: -0.14 },
+        headTilt = { x: 0.05, y: 0 },
+        scale = 1.0
+    } = options;
+
+    const avatar = new THREE.Group();
+
+    // Material blanco/gris mate estilo render de estudio
+    const bodyMat = new THREE.MeshStandardMaterial({
+        color: isAssistant ? 0xffffff : 0xf4f4f5,
+        roughness: 0.58,
+        metalness: 0.03
+    });
+
+    // Material corporativo minimalista KANOA: Gris carbón oscuro + detalle naranja
+    const kanoaCharcoalMat = new THREE.MeshStandardMaterial({
+        color: 0x272a30,
+        roughness: 0.52,
+        metalness: 0.08
+    });
+    const kanoaOrangeMat = new THREE.MeshStandardMaterial({
+        color: 0xf97316,
+        roughness: 0.42
+    });
+
+    const upperBody = new THREE.Group();
+    const hipY = seated ? 0.56 : 0.86;
+    upperBody.position.set(0, hipY, 0);
+    if (stooped) {
+        upperBody.rotation.x = 0.16;
+    }
+    avatar.add(upperBody);
+
+    // Pelvis / Cadera redondeada
+    const pelvis = new THREE.Mesh(new THREE.SphereGeometry(0.185, 24, 18), bodyMat);
+    pelvis.scale.set(1.05, 0.85, 0.85);
+    pelvis.castShadow = true;
+    pelvis.receiveShadow = true;
+    upperBody.add(pelvis);
+
+    // Torso liso estilizado
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.195, 0.175, 0.44, 24), bodyMat);
+    torso.position.y = 0.24;
+    torso.scale.set(1.05, 1, 0.82);
+    torso.castShadow = true;
+    torso.receiveShadow = true;
+    upperBody.add(torso);
+
+    const chest = new THREE.Mesh(new THREE.SphereGeometry(0.20, 24, 18), bodyMat);
+    chest.position.y = 0.44;
+    chest.scale.set(1.08, 0.78, 0.85);
+    chest.castShadow = true;
+    upperBody.add(chest);
+
+    // Chaleco gris oscuro + gafete naranja para el asistente KANOA
+    if (isAssistant) {
+        const vest = new THREE.Mesh(new THREE.CylinderGeometry(0.202, 0.183, 0.41, 24), kanoaCharcoalMat);
+        vest.position.y = 0.24;
+        vest.scale.set(1.06, 1, 0.84);
+        vest.castShadow = true;
+        upperBody.add(vest);
+
+        const badge = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.05, 0.02), kanoaOrangeMat);
+        badge.position.set(0.09, 0.36, 0.166);
+        badge.rotation.y = 0.25;
+        upperBody.add(badge);
+    }
+
+    // Cuello corto integrado
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.1, 16), bodyMat);
+    neck.position.y = 0.56;
+    upperBody.add(neck);
+
+    // Cabeza grande redondeada sin rostro
+    const headGroup = new THREE.Group();
+    headGroup.position.set(0, 0.77, 0.01);
+    headGroup.rotation.set(headTilt.x, headTilt.y, 0);
+    upperBody.add(headGroup);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.215, 32, 28), bodyMat);
+    head.scale.set(0.96, 1.08, 1.0);
+    head.castShadow = true;
+    head.receiveShadow = true;
+    headGroup.add(head);
+
+    function createLimb(radiusTop, radiusBottom, length) {
+        const limbGroup = new THREE.Group();
+        const cyl = new THREE.Mesh(
+            new THREE.CylinderGeometry(radiusTop, radiusBottom, length, 20),
+            bodyMat
+        );
+        cyl.position.y = -length / 2;
+        cyl.castShadow = true;
+        cyl.receiveShadow = true;
+        limbGroup.add(cyl);
+
+        const topCap = new THREE.Mesh(new THREE.SphereGeometry(radiusTop, 18, 14), bodyMat);
+        topCap.castShadow = true;
+        limbGroup.add(topCap);
+
+        const bottomCap = new THREE.Mesh(new THREE.SphereGeometry(radiusBottom, 18, 14), bodyMat);
+        bottomCap.position.y = -length;
+        bottomCap.castShadow = true;
+        limbGroup.add(bottomCap);
+
+        return limbGroup;
+    }
+
+    const leftArm = createLimb(0.058, 0.052, 0.44);
+    leftArm.position.set(0.23, 0.44, 0);
+    leftArm.rotation.set(leftArmPose.x, 0, leftArmPose.z);
+    upperBody.add(leftArm);
+
+    const rightArm = createLimb(0.058, 0.052, 0.44);
+    rightArm.position.set(-0.23, 0.44, 0);
+    rightArm.rotation.set(rightArmPose.x, 0, rightArmPose.z);
+    upperBody.add(rightArm);
+
+    if (!seated) {
+        const leftLeg = createLimb(0.075, 0.065, 0.78);
+        leftLeg.position.set(0.095, hipY, 0);
+        avatar.add(leftLeg);
+
+        const rightLeg = createLimb(0.075, 0.065, 0.78);
+        rightLeg.position.set(-0.095, hipY, 0);
+        avatar.add(rightLeg);
+
+        const footGeo = new THREE.SphereGeometry(0.075, 18, 14);
+        const leftFoot = new THREE.Mesh(footGeo, bodyMat);
+        leftFoot.scale.set(0.95, 0.65, 1.65);
+        leftFoot.position.set(0.095, 0.045, 0.05);
+        leftFoot.castShadow = true;
+        avatar.add(leftFoot);
+
+        const rightFoot = new THREE.Mesh(footGeo, bodyMat);
+        rightFoot.scale.set(0.95, 0.65, 1.65);
+        rightFoot.position.set(-0.095, 0.045, 0.05);
+        rightFoot.castShadow = true;
+        avatar.add(rightFoot);
+    } else {
+        [-0.095, 0.095].forEach(xOffset => {
+            const thigh = createLimb(0.072, 0.064, 0.36);
+            thigh.position.set(xOffset, hipY, 0.04);
+            thigh.rotation.x = -Math.PI / 2;
+            avatar.add(thigh);
+
+            const calf = createLimb(0.062, 0.055, 0.36);
+            calf.position.set(xOffset, hipY, 0.40);
+            calf.rotation.x = -0.15;
+            avatar.add(calf);
+
+            const foot = new THREE.Mesh(new THREE.SphereGeometry(0.068, 16, 12), bodyMat);
+            foot.scale.set(0.95, 0.6, 1.5);
+            foot.position.set(xOffset, 0.19, 0.48);
+            avatar.add(foot);
+        });
+    }
+
+    avatar.scale.setScalar(scale);
+    avatar.userData = { upperBody, headGroup, baseUpperY: hipY };
+    return avatar;
+}
+
+/**
+ * SILLA DE RUEDAS MINIMALISTA 3D (PARA ESTACIÓN 4)
+ */
+function createWheelchair3D() {
+    const chair = new THREE.Group();
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x272a30, roughness: 0.45, metalness: 0.5 });
+    const cushionMat = new THREE.MeshStandardMaterial({ color: 0x3f3f46, roughness: 0.75 });
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x181a1f, roughness: 0.5 });
+
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.07, 0.44), cushionMat);
+    seat.position.set(0, 0.48, 0.05);
+    seat.castShadow = true;
+    chair.add(seat);
+
+    const backrest = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.44, 0.07), cushionMat);
+    backrest.position.set(0, 0.72, -0.15);
+    backrest.castShadow = true;
+    chair.add(backrest);
+
+    [-0.27, 0.27].forEach(xPos => {
+        const bigWheel = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.025, 14, 32), wheelMat);
+        bigWheel.rotation.y = Math.PI / 2;
+        bigWheel.position.set(xPos, 0.30, -0.04);
+        bigWheel.castShadow = true;
+        chair.add(bigWheel);
+
+        const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.05, 16), frameMat);
+        hub.rotation.z = Math.PI / 2;
+        hub.position.set(xPos, 0.30, -0.04);
+        chair.add(hub);
+
+        const smallWheel = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.018, 10, 20), wheelMat);
+        smallWheel.rotation.y = Math.PI / 2;
+        smallWheel.position.set(xPos * 0.85, 0.10, 0.32);
+        chair.add(smallWheel);
+    });
+
+    return chair;
+}
+
+/**
+ * CONSTRUCCIÓN DE LAS 6 ESCENAS DE AVATARES EN EL SUPERMERCADO
+ */
+function buildAllStationScenes() {
+    STATIONS.forEach((station, index) => {
+        const group = new THREE.Group();
+        group.position.copy(station.scenePos);
+        group.rotation.y = station.sceneRotY;
+
+        // Aro sutil gris carbón y naranja en el suelo para enmarcar la escena
+        const baseRing = new THREE.Mesh(
+            new THREE.RingGeometry(1.18, 1.30, 40),
+            new THREE.MeshBasicMaterial({
+                color: 0xf97316,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.45
+            })
+        );
+        baseRing.rotation.x = -Math.PI / 2;
+        baseRing.position.y = 0.015;
+        group.add(baseRing);
+
+        let clientAvatar, assistantAvatar;
+
+        if (station.id === 'auditiva') {
+            clientAvatar = createMannequinAvatar({
+                isAssistant: false,
+                leftArmPose: { x: -0.75, z: 0.25 },
+                rightArmPose: { x: 0.1, z: -0.15 },
+                headTilt: { x: 0.05, y: -0.35 }
+            });
+            clientAvatar.position.set(-0.55, 0, 0);
+            clientAvatar.rotation.y = 0.75;
+
+            assistantAvatar = createMannequinAvatar({
+                isAssistant: true,
+                leftArmPose: { x: -0.85, z: 0.2 },
+                rightArmPose: { x: -0.65, z: -0.2 },
+                headTilt: { x: 0.08, y: 0.35 }
+            });
+            assistantAvatar.position.set(0.55, 0, 0.1);
+            assistantAvatar.rotation.y = -0.75;
+
+            const tablet = new THREE.Mesh(
+                new THREE.BoxGeometry(0.26, 0.19, 0.02),
+                new THREE.MeshStandardMaterial({ color: 0x181a1f })
+            );
+            const screen = new THREE.Mesh(
+                new THREE.PlaneGeometry(0.23, 0.16),
+                new THREE.MeshBasicMaterial({ color: 0xf97316 })
+            );
+            screen.position.z = 0.012;
+            tablet.add(screen);
+            tablet.position.set(0.25, 1.18, 0.22);
+            tablet.rotation.set(-0.4, -0.65, 0);
+            group.add(tablet);
+
+        } else if (station.id === 'intelectual') {
+            clientAvatar = createMannequinAvatar({
+                isAssistant: false,
+                leftArmPose: { x: 0.1, z: 0.15 },
+                rightArmPose: { x: -0.4, z: -0.1 },
+                headTilt: { x: -0.05, y: -0.25 }
+            });
+            clientAvatar.position.set(-0.52, 0, 0.2);
+            clientAvatar.rotation.y = 0.65;
+
+            assistantAvatar = createMannequinAvatar({
+                isAssistant: true,
+                leftArmPose: { x: 0.1, z: 0.15 },
+                rightArmPose: { x: -1.15, z: -0.25 },
+                headTilt: { x: 0.04, y: 0.3 }
+            });
+            assistantAvatar.position.set(0.55, 0, 0);
+            assistantAvatar.rotation.y = -0.65;
+
+            const signBoard = new THREE.Mesh(
+                new THREE.BoxGeometry(0.42, 0.32, 0.03),
+                new THREE.MeshBasicMaterial({ map: createSignTexture('2 x 1 = $40', '#272a30', '#f97316', 'Oferta Clara') })
+            );
+            signBoard.position.set(0.15, 1.48, -0.45);
+            group.add(signBoard);
+
+        } else if (station.id === 'autismo') {
+            clientAvatar = createMannequinAvatar({
+                isAssistant: false,
+                leftArmPose: { x: -0.35, z: 0.15 },
+                rightArmPose: { x: -0.35, z: -0.15 },
+                headTilt: { x: 0.06, y: -0.2 }
+            });
+            clientAvatar.position.set(-0.5, 0, 0.25);
+            clientAvatar.rotation.y = 0.55;
+
+            const earMat = new THREE.MeshStandardMaterial({ color: 0x3f3f46, roughness: 0.45 });
+            [-0.21, 0.21].forEach(xE => {
+                const cup = new THREE.Mesh(new THREE.SphereGeometry(0.065, 16, 14), earMat);
+                cup.scale.set(0.6, 1.1, 1.0);
+                cup.position.set(xE, 1.63, 0.01);
+                clientAvatar.add(cup);
+            });
+
+            assistantAvatar = createMannequinAvatar({
+                isAssistant: true,
+                leftArmPose: { x: -0.65, z: 0.35 },
+                rightArmPose: { x: 0.1, z: -0.15 },
+                headTilt: { x: 0.03, y: 0.3 }
+            });
+            assistantAvatar.position.set(0.58, 0, -0.05);
+            assistantAvatar.rotation.y = -0.65;
+
+        } else if (station.id === 'motriz') {
+            const wheelchair = createWheelchair3D();
+            wheelchair.position.set(-0.52, 0, 0.15);
+            wheelchair.rotation.y = 0.65;
+            group.add(wheelchair);
+
+            clientAvatar = createMannequinAvatar({
+                isAssistant: false,
+                seated: true,
+                leftArmPose: { x: -0.45, z: 0.15 },
+                rightArmPose: { x: -0.45, z: -0.15 },
+                headTilt: { x: -0.18, y: -0.25 }
+            });
+            clientAvatar.position.set(-0.52, 0, 0.15);
+            clientAvatar.rotation.y = 0.65;
+
+            assistantAvatar = createMannequinAvatar({
+                isAssistant: true,
+                leftArmPose: { x: 0.12, z: 0.15 },
+                rightArmPose: { x: -2.2, z: -0.15 },
+                headTilt: { x: -0.15, y: 0.2 }
+            });
+            assistantAvatar.position.set(0.52, 0, -0.15);
+            assistantAvatar.rotation.y = -0.5;
+
+            const boxItem = new THREE.Mesh(
+                new THREE.BoxGeometry(0.18, 0.22, 0.14),
+                new THREE.MeshStandardMaterial({ color: 0xf97316 })
+            );
+            boxItem.position.set(0.28, 1.85, -0.25);
+            group.add(boxItem);
+
+        } else if (station.id === 'visual') {
+            clientAvatar = createMannequinAvatar({
+                isAssistant: false,
+                leftArmPose: { x: 0.1, z: 0.14 },
+                rightArmPose: { x: -0.55, z: -0.12 },
+                headTilt: { x: 0.02, y: -0.2 }
+            });
+            clientAvatar.position.set(-0.5, 0, 0.15);
+            clientAvatar.rotation.y = 0.55;
+
+            const cane = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.012, 0.012, 1.15, 12),
+                new THREE.MeshBasicMaterial({ color: 0xffffff })
+            );
+            cane.position.set(-0.58, 0.52, 0.52);
+            cane.rotation.set(0.38, 0, -0.12);
+            group.add(cane);
+
+            const caneTip = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.014, 0.014, 0.14, 12),
+                new THREE.MeshBasicMaterial({ color: 0xf97316 })
+            );
+            caneTip.position.set(-0.52, 0.06, 0.72);
+            caneTip.rotation.set(0.38, 0, -0.12);
+            group.add(caneTip);
+
+            assistantAvatar = createMannequinAvatar({
+                isAssistant: true,
+                leftArmPose: { x: -0.6, z: 0.2 },
+                rightArmPose: { x: -0.35, z: -0.18 },
+                headTilt: { x: 0.05, y: 0.3 }
+            });
+            assistantAvatar.position.set(0.48, 0, 0.05);
+            assistantAvatar.rotation.y = -0.65;
+
+        } else if (station.id === 'adulto_mayor') {
+            clientAvatar = createMannequinAvatar({
+                isAssistant: false,
+                stooped: true,
+                leftArmPose: { x: 0.08, z: 0.14 },
+                rightArmPose: { x: -0.35, z: -0.12 },
+                headTilt: { x: 0.05, y: -0.25 },
+                scale: 0.96
+            });
+            clientAvatar.position.set(-0.48, 0, 0.15);
+            clientAvatar.rotation.y = 0.6;
+
+            const walkingStick = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.016, 0.014, 0.88, 12),
+                new THREE.MeshStandardMaterial({ color: 0x52525b, roughness: 0.6 })
+            );
+            walkingStick.position.set(-0.66, 0.44, 0.36);
+            walkingStick.rotation.x = 0.12;
+            group.add(walkingStick);
+
+            assistantAvatar = createMannequinAvatar({
+                isAssistant: true,
+                leftArmPose: { x: -0.5, z: 0.22 },
+                rightArmPose: { x: 0.12, z: -0.14 },
+                headTilt: { x: 0.08, y: 0.35 }
+            });
+            assistantAvatar.position.set(0.52, 0, 0.05);
+            assistantAvatar.rotation.y = -0.7;
+        }
+
+        group.add(clientAvatar, assistantAvatar);
+        scene.add(group);
+
+        animatedSceneGroups.push({
+            stationIndex: index,
+            group,
+            clientAvatar,
+            assistantAvatar,
+            phase: index * 1.1
+        });
+    });
+}
+
+/**
+ * ============================================================================
+ * ENTORNO ARQUITECTÓNICO TENUE Y DESATURADO DEL SUPERMERCADO 3D
+ * (Tonos piedra/gris suave para que los avatares blancos y acentos naranjas
+ *  resalten limpiamente sin ruido visual)
+ * ============================================================================
+ */
+function createFloorTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    // Piso gris piedra mate muy tenue y uniforme
+    ctx.fillStyle = '#d4d4d8';
+    ctx.fillRect(0, 0, 512, 512);
+
+    const tile = 128;
+    for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
+            ctx.fillStyle = (x + y) % 2 === 0 ? '#dcdce0' : '#d4d4d8';
+            ctx.fillRect(x * tile + 1, y * tile + 1, tile - 2, tile - 2);
+        }
+    }
+    ctx.strokeStyle = '#c4c4ca';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i <= 4; i++) {
+        ctx.beginPath(); ctx.moveTo(i * tile, 0); ctx.lineTo(i * tile, 512); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i * tile); ctx.lineTo(512, i * tile); ctx.stroke();
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(14, 16);
+    return tex;
+}
+
+function createSignTexture(text, bgColor, textColor = '#ffffff', subtext = '') {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 160;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, 512, 160);
+
+    ctx.strokeStyle = 'rgba(249, 115, 22, 0.55)';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(6, 6, 500, 148);
+
+    ctx.fillStyle = textColor;
+    ctx.font = 'bold 38px Inter, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 256, subtext ? 62 : 82);
+
+    if (subtext) {
+        ctx.font = '500 22px Inter, Arial, sans-serif';
+        ctx.fillStyle = '#d4d4d8';
+        ctx.fillText(subtext, 256, 114);
+    }
+    return new THREE.CanvasTexture(canvas);
+}
+
+function createShelfTexture(palette) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    // Fondo de anaquel gris medio apagado para evitar saturación visual
+    ctx.fillStyle = '#52525b';
+    ctx.fillRect(0, 0, 512, 512);
+
+    const rows = 4;
+    const rowH = 512 / rows;
+    for (let r = 0; r < rows; r++) {
+        const yBase = r * rowH;
+        ctx.fillStyle = '#a1a1aa';
+        ctx.fillRect(0, yBase + rowH - 10, 512, 10);
+
+        // Etiquetas discretas gris claro/naranja tenue
+        ctx.fillStyle = '#d4d4d8';
+        for (let p = 18; p < 490; p += 92) {
+            ctx.fillRect(p, yBase + rowH - 9, 30, 7);
+        }
+
+        let x = 12;
+        while (x < 485) {
+            const w = 24 + ((r * 19 + x) % 22);
+            const h = 54 + ((r * 27 + x) % 34);
+            ctx.fillStyle = palette[(r + Math.floor(x / 35)) % palette.length];
+            ctx.fillRect(x, yBase + rowH - 10 - h, w, h);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.45)';
+            ctx.fillRect(x + 4, yBase + rowH - 10 - h * 0.64, w - 8, h * 0.30);
+            x += w + 8;
+        }
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    return tex;
+}
+
+function buildSupermarketEnvironment() {
+    // Iluminación de estudio suave y neutra para resaltar los maniquíes blancos
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xb4b4bb, 0.88);
+    hemiLight.position.set(0, 12, 0);
+    scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.62);
+    dirLight.position.set(8, 16, 10);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 1;
+    dirLight.shadow.camera.far = 45;
+    const d = 18;
+    dirLight.shadow.camera.left = -d;
+    dirLight.shadow.camera.right = d;
+    dirLight.shadow.camera.top = d;
+    dirLight.shadow.camera.bottom = -d;
+    dirLight.shadow.bias = -0.0005;
+    scene.add(dirLight);
+
+    // Suelo tono piedra tenue
+    const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(28, 34),
+        new THREE.MeshStandardMaterial({ map: createFloorTexture(), roughness: 0.65, metalness: 0.02 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // Techo gris muy claro y luminarias minimalistas
+    const ceiling = new THREE.Mesh(
+        new THREE.PlaneGeometry(28, 34),
+        new THREE.MeshBasicMaterial({ color: 0xe4e4e7, side: THREE.DoubleSide })
+    );
+    ceiling.rotation.x = Math.PI / 2;
+    ceiling.position.y = 5.4;
+    scene.add(ceiling);
+
+    const lampMat = new THREE.MeshBasicMaterial({ color: 0xfafafa });
+    [-8.5, -2.8, 2.8, 8.5].forEach(x => {
+        const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.08, 24), lampMat);
+        lamp.position.set(x, 5.18, -1);
+        scene.add(lamp);
+    });
+
+    // Paredes perimetrales en gris cálido desaturado
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0xdcdce0, roughness: 0.9 });
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(28, 5.4, 0.4), wallMat);
+    backWall.position.set(0, 2.7, -17);
+    scene.add(backWall);
+
+    const frontWall = new THREE.Mesh(new THREE.BoxGeometry(28, 5.4, 0.4), wallMat);
+    frontWall.position.set(0, 2.7, 15);
+    scene.add(frontWall);
+
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 5.4, 34), wallMat);
+    leftWall.position.set(-14, 2.7, -1);
+    scene.add(leftWall);
+
+    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 5.4, 34), wallMat);
+    rightWall.position.set(14, 2.7, -1);
+    scene.add(rightWall);
+
+    // Góndolas con paleta desaturada minimalista (grises neutros + toques tierra/naranja suave)
+    const mutedPalette1 = ['#71717a', '#a1a1aa', '#9ca3af', '#d6d3d1', '#fdba74'];
+    const mutedPalette2 = ['#78716c', '#a8a29e', '#94a3b8', '#cbd5e1', '#fed7aa'];
+    const tex1 = createShelfTexture(mutedPalette1);
+    const tex2 = createShelfTexture(mutedPalette2);
+
+    createGondola(-4.2, -1.5, 1.05, 2.45, 11.0, tex1);
+    createGondola(3.6, -3.5, 1.05, 2.45, 11.0, tex2);
+
+    // Refrigeradores de Lácteos al fondo en tonos neutros suaves
+    const coolerTex = createShelfTexture(['#e4e4e7', '#cbd5e1', '#d4d4d8', '#f4f4f5', '#fed7aa']);
+    const coolerMat = new THREE.MeshStandardMaterial({ map: coolerTex, roughness: 0.6 });
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x3f3f46 });
+    for (let x = -8; x <= 8; x += 4) {
+        const body = new THREE.Mesh(new THREE.BoxGeometry(3.8, 2.7, 0.8), frameMat);
+        body.position.set(x, 1.35, -16.3);
+        scene.add(body);
+        const front = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 2.3), coolerMat);
+        front.position.set(x, 1.4, -15.88);
+        scene.add(front);
+    }
+
+    // Islas de Frutas, Verduras y Panadería en tonos suaves desaturados
+    [
+        { x: -11.2, z: -5.5, color: 0x9ca3af },
+        { x: -11.2, z: -1.5, color: 0xa8a29e },
+        { x: -11.2, z: 2.5, color: 0xd6d3d1 }
+    ].forEach(bin => {
+        const base = new THREE.Mesh(
+            new THREE.BoxGeometry(2.0, 0.85, 2.4),
+            new THREE.MeshStandardMaterial({ color: 0x52525b, roughness: 0.85 })
+        );
+        base.position.set(bin.x, 0.425, bin.z);
+        base.castShadow = true;
+        base.receiveShadow = true;
+        scene.add(base);
+
+        const top = new THREE.Mesh(
+            new THREE.BoxGeometry(1.8, 0.25, 2.2),
+            new THREE.MeshStandardMaterial({ color: bin.color, roughness: 0.6 })
+        );
+        top.position.set(bin.x, 0.92, bin.z);
+        scene.add(top);
+    });
+
+    // Zona de Cajas Registradoras minimalistas en gris carbón
+    [5.5, 1.5].forEach(zPos => {
+        const counter = new THREE.Mesh(
+            new THREE.BoxGeometry(1.1, 0.95, 2.5),
+            new THREE.MeshStandardMaterial({ color: 0x272a30, roughness: 0.6 })
+        );
+        counter.position.set(10.8, 0.475, zPos);
+        counter.castShadow = true;
+        scene.add(counter);
+
+        const signPost = new THREE.Mesh(
+            new THREE.BoxGeometry(0.32, 0.32, 0.32),
+            new THREE.MeshBasicMaterial({ color: 0xf97316 })
+        );
+        signPost.position.set(10.8, 2.3, zPos + 0.8);
+        scene.add(signPost);
+    });
+
+    // Letreros Aéreos de Señalización con Alto Contraste (Gris Carbón #181A1F + Texto Blanco)
+    addHangingSign(-5.8, 4.15, 5.2, '1. ABARROTES', '#181A1F', 'Atención en Pasillo');
+    addHangingSign(-1.8, 4.15, -2.0, '2. OFERTAS', '#181A1F', 'Comparación Clara');
+    addHangingSign(8.5, 4.15, 4.0, '3. CAJA TRANQUILA', '#181A1F', 'Baja Afluencia');
+    addHangingSign(1.5, 4.15, -7.8, '4. PASILLO CENTRAL', '#181A1F', 'Accesibilidad Motriz');
+    addHangingSign(-2.5, 4.15, -14.2, '5. LÁCTEOS', '#181A1F', 'Lectura y Guía');
+    addHangingSign(-9.5, 4.15, -2.5, '6. FRESCOS Y PAN', '#181A1F', 'Atención Pausada');
+}
+
+function createGondola(x, z, width, height, length, texture) {
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+
+    const frame = new THREE.Mesh(
+        new THREE.BoxGeometry(width, height, length),
+        new THREE.MeshStandardMaterial({ color: 0x3f3f46 })
+    );
+    frame.position.y = height / 2;
+    frame.castShadow = true;
+    frame.receiveShadow = true;
+    group.add(frame);
+
+    const sideMat = new THREE.MeshStandardMaterial({ map: texture });
+    const left = new THREE.Mesh(new THREE.PlaneGeometry(length - 0.1, height - 0.15), sideMat);
+    left.rotation.y = -Math.PI / 2;
+    left.position.set(-width / 2 - 0.01, height / 2, 0);
+    group.add(left);
+
+    const right = new THREE.Mesh(new THREE.PlaneGeometry(length - 0.1, height - 0.15), sideMat);
+    right.rotation.y = Math.PI / 2;
+    right.position.set(width / 2 + 0.01, height / 2, 0);
+    group.add(right);
+
+    scene.add(group);
+}
+
+function addHangingSign(x, y, z, title, bg, sub) {
+    const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(3.1, 0.95, 0.1),
+        new THREE.MeshBasicMaterial({ map: createSignTexture(title, bg, '#ffffff', sub) })
+    );
+    sign.position.set(x, y, z);
+    scene.add(sign);
+}
+
+/**
+ * ============================================================================
+ * NAVEGACIÓN ESTILO GOOGLE STREET VIEW ENTRE LAS 6 ESTACIONES
+ * ============================================================================
+ */
+function goToStation(index, openModalAfter = false) {
+    if (isTransitioning || index < 0 || index >= STATIONS.length) return;
+    const target = STATIONS[index];
+    markInteracted();
+
+    if (index === currentStationIndex) {
+        if (openModalAfter) openCaseModal(index);
+        return;
+    }
+
+    isTransitioning = true;
+    const startPos = camera.position.clone();
+    const endPos = target.cameraPos.clone();
+
+    // Calcular ángulo hacia la escena de avatares de destino
+    const dx = target.scenePos.x - endPos.x;
+    const dz = target.scenePos.z - endPos.z;
+    const lookAtYaw = Math.atan2(-dx, -dz);
+
+    const startFov = camera.fov;
+    const duration = 800;
+    const startTime = performance.now();
+
+    currentStationIndex = index;
+    visitedStations.add(index);
+    updateUIState();
+
+    function animateStep(now) {
+        const t = Math.min((now - startTime) / duration, 1);
+        const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+        camera.position.lerpVectors(startPos, endPos, ease);
+
+        // Efecto dolly zoom suave estilo Street View
+        camera.fov = startFov - Math.sin(t * Math.PI) * 13;
+        camera.updateProjectionMatrix();
+
+        targetYaw = lerpAngle(targetYaw, lookAtYaw, 0.14);
+        targetPitch = lerpAngle(targetPitch, -0.06, 0.14);
+
+        if (t < 1) {
+            requestAnimationFrame(animateStep);
+        } else {
+            camera.position.copy(endPos);
+            camera.fov = 70;
+            camera.updateProjectionMatrix();
+            isTransitioning = false;
+            if (openModalAfter) {
+                openCaseModal(index);
+            }
+        }
+    }
+
+    requestAnimationFrame(animateStep);
+}
+
+function lerpAngle(a, b, t) {
+    let diff = b - a;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    return a + diff * t;
+}
+
+/**
+ * ============================================================================
+ * PROYECCIÓN 3D -> 2D (HOTSPOTS DE SUELO + INDICADORES FLOTANTES SOBRE AVATARES)
+ * ============================================================================
+ */
+function updateProjectedOverlays() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const currentStation = STATIONS[currentStationIndex];
+    const connectedIds = new Set(isTransitioning ? [] : currentStation.connections);
+
+    // 1. Hotspots de avance en el suelo (estilo Google Street View)
+    STATIONS.forEach((st, idx) => {
+        let el = hotspotElements.get(st.id);
+        if (!el) {
+            el = createFloorHotspotDOM(st, idx);
+            overlayLayer.appendChild(el);
+            hotspotElements.set(st.id, el);
+        }
+
+        if (!connectedIds.has(st.id)) {
+            el.style.display = 'none';
+            return;
+        }
+
+        const floorTarget = new THREE.Vector3(st.cameraPos.x, 0.08, st.cameraPos.z);
+        const proj = project3DTo2D(floorTarget, width, height);
+
+        if (!proj.visible) {
+            el.style.display = 'none';
+        } else {
+            el.style.display = 'flex';
+            el.style.left = `${proj.x}px`;
+            el.style.top = `${proj.y}px`;
+            const sc = THREE.MathUtils.clamp(9.5 / proj.distance, 0.7, 1.2);
+            el.style.transform = `translate(-50%, -50%) scale(${sc.toFixed(2)})`;
+        }
+    });
+
+    // 2. Indicador flotante interactivo sobre los avatares 3D ("Ver caso y solución KANOA")
+    STATIONS.forEach((st, idx) => {
+        let badge = avatarBadgeElements.get(st.id);
+        if (!badge) {
+            badge = createAvatarBadgeDOM(st, idx);
+            overlayLayer.appendChild(badge);
+            avatarBadgeElements.set(st.id, badge);
+        }
+
+        // Mostrar indicador en la estación actual o cercanas visibles
+        const badgePos3D = new THREE.Vector3(st.scenePos.x, 2.28, st.scenePos.z);
+        const proj = project3DTo2D(badgePos3D, width, height);
+
+        if (!proj.visible || proj.distance > 14.5 || isTransitioning) {
+            badge.style.display = 'none';
+        } else {
+            badge.style.display = 'flex';
+            badge.style.left = `${proj.x}px`;
+            badge.style.top = `${proj.y}px`;
+        }
+    });
+}
+
+function project3DTo2D(vec3, width, height) {
+    const temp = vec3.clone();
+    const distance = camera.position.distanceTo(temp);
+    temp.project(camera);
+
+    const inFront = temp.z < 1;
+    const x = (temp.x * 0.5 + 0.5) * width;
+    const y = (-temp.y * 0.5 + 0.5) * height;
+    const inBounds = x >= -80 && x <= width + 80 && y >= -80 && y <= height + 80;
+
+    return { x, y, distance, visible: inFront && inBounds };
+}
+
+function createFloorHotspotDOM(station, idx) {
+    const btn = document.createElement('button');
+    btn.className = 'projected-ui pointer-events-auto group flex flex-col items-center focus:outline-none';
+    btn.innerHTML = `
+        <span class="mb-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-zinc-900/95 text-white border border-zinc-700 shadow-lg group-hover:bg-orange-500 group-hover:border-orange-400 transition whitespace-nowrap">
+            Estación ${station.number}: ${station.shortLabel.replace(/^\d+\.\s/, '')}
+        </span>
+        <div class="relative w-12 h-12 flex items-center justify-center">
+            <span class="hotspot-ring absolute inset-0 rounded-full bg-orange-500/35 border-2 border-orange-400"></span>
+            <div class="w-10 h-10 rounded-full bg-zinc-900/95 group-hover:bg-orange-500 text-orange-400 group-hover:text-white shadow-xl border-2 border-orange-500/70 flex items-center justify-center transition transform group-hover:scale-110">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 15l7-7 7 7"/>
+                </svg>
+            </div>
+        </div>
+    `;
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        goToStation(idx, false);
+    });
+    return btn;
+}
+
+function createAvatarBadgeDOM(station, idx) {
+    const btn = document.createElement('button');
+    btn.className = 'avatar-floating-badge pointer-events-auto group flex items-center gap-2 bg-zinc-900/95 hover:bg-orange-500 text-white border border-orange-500/80 rounded-full px-3 py-1.5 shadow-xl transition';
+    btn.innerHTML = `
+        <span class="w-4 h-4 rounded-full bg-orange-500 group-hover:bg-zinc-900 text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+            ${station.number}
+        </span>
+        <span class="text-[11px] font-bold whitespace-nowrap">Ver caso KANOA</span>
+    `;
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (currentStationIndex !== idx) {
+            goToStation(idx, true);
+        } else {
+            openCaseModal(idx);
+        }
+    });
+    return btn;
+}
+
+/**
+ * ============================================================================
+ * POP-UP COMPACTO (PANEL LATERAL EN ESCRITORIO / CENTRADO EN MÓVIL)
+ * ============================================================================
+ */
+function openCaseModal(index) {
+    const st = STATIONS[index];
+    visitedStations.add(index);
+    updateUIState();
+
+    document.getElementById('modal-icon-box').innerHTML = getStationIconSVG(st.id);
+    document.getElementById('modal-step-tag').textContent = `Parada ${st.number}/6`;
+    document.getElementById('modal-tool-badge').textContent = st.toolBadge;
+    document.getElementById('modal-title').textContent = st.title.replace(/^\d+\.\s/, '');
+    document.getElementById('modal-problem').textContent = st.problem;
+    document.getElementById('modal-solution').textContent = st.solution;
+    document.getElementById('modal-do').textContent = st.doTip;
+
+    // Renderizar diálogo ilustrativo compacto
+    const dialogueBox = document.getElementById('modal-dialogue-box');
+    dialogueBox.innerHTML = '';
+    st.dialogue.forEach(turn => {
+        const isKanoa = turn.role === 'kanoa';
+        const row = document.createElement('div');
+        row.className = 'rounded-lg px-2.5 py-2 text-[11px] leading-snug ' + (
+            isKanoa
+                ? 'bg-zinc-900 border border-orange-500/35 text-zinc-100'
+                : 'bg-zinc-800/70 border border-zinc-700/60 text-zinc-300'
+        );
+        row.innerHTML = `
+            <span class="font-bold uppercase tracking-wider text-[9px] mr-1.5 ${
+                isKanoa ? 'text-orange-400' : 'text-zinc-400'
+            }">${turn.name}:</span>
+            <span>${turn.text}</span>
+        `;
+        dialogueBox.appendChild(row);
+    });
+
+    const nextIdx = (index + 1) % STATIONS.length;
+    document.getElementById('modal-next-label').textContent =
+        index < STATIONS.length - 1 ? `Parada ${STATIONS[nextIdx].number}` : 'Parada 1';
+
+    document.getElementById('case-modal-wrapper').classList.remove('hidden');
+    document.getElementById('case-modal-backdrop').classList.remove('hidden');
+}
+
+function closeCaseModal() {
+    document.getElementById('case-modal-wrapper').classList.add('hidden');
+    document.getElementById('case-modal-backdrop').classList.add('hidden');
+}
+
+/**
+ * ============================================================================
+ * MINIMAPA 2D MINIMALISTA (ESQUINA INFERIOR IZQUIERDA)
+ * ============================================================================
+ */
+function drawMinimap() {
+    const w = minimapCanvas.width;
+    const h = minimapCanvas.height;
+    minimapCtx.clearRect(0, 0, w, h);
+
+    const toMapX = (wx) => ((wx + 14) / 28) * (w - 24) + 12;
+    const toMapY = (wz) => ((wz + 17) / 32) * (h - 24) + 12;
+
+    minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+    minimapCtx.lineWidth = 1;
+    minimapCtx.strokeRect(8, 8, w - 16, h - 16);
+
+    minimapCtx.fillStyle = 'rgba(113, 113, 122, 0.25)';
+    minimapCtx.fillRect(toMapX(-4.7), toMapY(-7.0), (1.05 / 28) * (w - 24), (11 / 32) * (h - 24));
+    minimapCtx.fillRect(toMapX(3.1), toMapY(-9.0), (1.05 / 28) * (w - 24), (11 / 32) * (h - 24));
+
+    minimapCtx.strokeStyle = 'rgba(161, 161, 170, 0.22)';
+    minimapCtx.lineWidth = 1.2;
+    STATIONS.forEach(st => {
+        st.connections.forEach(connId => {
+            const target = STATIONS.find(s => s.id === connId);
+            if (target) {
+                minimapCtx.beginPath();
+                minimapCtx.moveTo(toMapX(st.cameraPos.x), toMapY(st.cameraPos.z));
+                minimapCtx.lineTo(toMapX(target.cameraPos.x), toMapY(target.cameraPos.z));
+                minimapCtx.stroke();
+            }
+        });
+    });
+
+    // Cono de visión (FOV) naranja suave
+    const cx = toMapX(camera.position.x);
+    const cy = toMapY(camera.position.z);
+    const mapAngle = -Math.PI / 2 - yaw;
+    const fovRad = THREE.MathUtils.degToRad(camera.fov * 0.68);
+
+    minimapCtx.save();
+    minimapCtx.beginPath();
+    minimapCtx.moveTo(cx, cy);
+    minimapCtx.arc(cx, cy, 22, mapAngle - fovRad / 2, mapAngle + fovRad / 2);
+    minimapCtx.closePath();
+    const grad = minimapCtx.createRadialGradient(cx, cy, 2, cx, cy, 22);
+    grad.addColorStop(0, 'rgba(249, 115, 22, 0.55)');
+    grad.addColorStop(1, 'rgba(249, 115, 22, 0.0)');
+    minimapCtx.fillStyle = grad;
+    minimapCtx.fill();
+    minimapCtx.restore();
+
+    STATIONS.forEach((st, idx) => {
+        const nx = toMapX(st.cameraPos.x);
+        const ny = toMapY(st.cameraPos.z);
+        const isActive = idx === currentStationIndex;
+
+        minimapCtx.beginPath();
+        minimapCtx.arc(nx, ny, isActive ? 7.5 : 6, 0, Math.PI * 2);
+        minimapCtx.fillStyle = isActive ? '#F97316' : '#272A30';
+        minimapCtx.fill();
+        minimapCtx.lineWidth = 1.2;
+        minimapCtx.strokeStyle = isActive ? '#FFFFFF' : '#71717A';
+        minimapCtx.stroke();
+
+        minimapCtx.fillStyle = '#FFFFFF';
+        minimapCtx.font = 'bold 8.5px Inter, sans-serif';
+        minimapCtx.textAlign = 'center';
+        minimapCtx.textBaseline = 'middle';
+        minimapCtx.fillText(String(st.number), nx, ny + 0.5);
+    });
+}
+
+/**
+ * ============================================================================
+ * ACTUALIZACIÓN DE INTERFAZ Y EVENTOS
+ * ============================================================================
+ */
+function initQuickNav() {
+    const nav = document.getElementById('quick-nav');
+    nav.innerHTML = '';
+    STATIONS.forEach((st, idx) => {
+        const btn = document.createElement('button');
+        btn.dataset.idx = idx;
+        btn.className = 'px-2.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition flex items-center gap-1.5';
+        btn.innerHTML = `<span>${st.shortLabel}</span>`;
+        btn.addEventListener('click', () => goToStation(idx, false));
+        nav.appendChild(btn);
+    });
+}
+
+function updateUIState() {
+    const st = STATIONS[currentStationIndex];
+    document.getElementById('station-progress-badge').textContent = `${st.number} / 6`;
+    document.getElementById('station-title').textContent = st.title;
+    document.getElementById('station-zone').textContent = st.zone;
+    document.getElementById('visited-counter').textContent = `${visitedStations.size}/6`;
+
+    document.querySelectorAll('#quick-nav button').forEach(btn => {
+        const idx = Number(btn.dataset.idx);
+        if (idx === currentStationIndex) {
+            btn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition bg-orange-500 text-white shadow';
+        } else if (visitedStations.has(idx)) {
+            btn.className = 'px-2.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition bg-zinc-800 text-zinc-200 hover:bg-zinc-700';
+        } else {
+            btn.className = 'px-2.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition text-zinc-400 hover:bg-zinc-800/80 hover:text-zinc-200';
+        }
+    });
+}
+
+function updateCompass() {
+    let deg = Math.round((-THREE.MathUtils.radToDeg(yaw)) % 360);
+    if (deg < 0) deg += 360;
+    document.getElementById('compass-deg').textContent = `${deg}°`;
+    document.getElementById('compass-needle').style.transform = `rotate(${-deg}deg)`;
+}
+
+function markInteracted() {
+    if (!hasInteracted) {
+        hasInteracted = true;
+        const pill = document.getElementById('hint-pill');
+        if (pill) {
+            pill.style.opacity = '0';
+            setTimeout(() => pill.remove(), 500);
+        }
+    }
+}
+
+function setupEvents() {
+    // Arrastre 360° con ratón
+    container.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        pointerDownX = e.clientX;
+        pointerDownY = e.clientY;
+        dragDistance = 0;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - pointerDownX;
+        const dy = e.clientY - pointerDownY;
+        dragDistance += Math.hypot(dx, dy);
+        if (dragDistance > 4) markInteracted();
+
+        targetYaw += dx * 0.0033;
+        targetPitch = THREE.MathUtils.clamp(targetPitch + dy * 0.0033, -0.7, 0.6);
+
+        pointerDownX = e.clientX;
+        pointerDownY = e.clientY;
+    });
+
+    window.addEventListener('mouseup', () => { isDragging = false; });
+
+    // Arrastre táctil 360°
+    container.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            isDragging = true;
+            pointerDownX = e.touches[0].clientX;
+            pointerDownY = e.touches[0].clientY;
+        }
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+        if (!isDragging || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - pointerDownX;
+        const dy = e.touches[0].clientY - pointerDownY;
+        markInteracted();
+
+        targetYaw += dx * 0.0045;
+        targetPitch = THREE.MathUtils.clamp(targetPitch + dy * 0.0045, -0.7, 0.6);
+
+        pointerDownX = e.touches[0].clientX;
+        pointerDownY = e.touches[0].clientY;
+    }, { passive: true });
+
+    container.addEventListener('touchend', () => { isDragging = false; });
+
+    // Zoom suave con rueda
+    container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (isTransitioning) return;
+        camera.fov = THREE.MathUtils.clamp(camera.fov + e.deltaY * 0.03, 45, 82);
+        camera.updateProjectionMatrix();
+    }, { passive: false });
+
+    // Clic en Minimapa para saltar a cualquiera de los 6 puntos
+    minimapCanvas.addEventListener('click', (e) => {
+        const rect = minimapCanvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+        const w = minimapCanvas.width;
+        const h = minimapCanvas.height;
+
+        let closestIdx = -1;
+        let minDist = 22;
+        STATIONS.forEach((st, idx) => {
+            const nx = ((st.cameraPos.x + 14) / 28) * (w - 28) + 14;
+            const ny = ((st.cameraPos.z + 17) / 32) * (h - 28) + 14;
+            const d = Math.hypot(clickX - nx, clickY - ny);
+            if (d < minDist) {
+                minDist = d;
+                closestIdx = idx;
+            }
+        });
+        if (closestIdx !== -1) goToStation(closestIdx, false);
+    });
+
+    // Ampliar / Reducir minimapa
+    document.getElementById('toggle-map-size').addEventListener('click', (e) => {
+        isMinimapExpanded = !isMinimapExpanded;
+        minimapCanvas.width = isMinimapExpanded ? 235 : 176;
+        minimapCanvas.height = isMinimapExpanded ? 185 : 138;
+        e.target.textContent = isMinimapExpanded ? 'Reducir' : 'Ampliar';
+    });
+
+    // Botones Anterior / Siguiente / Abrir Caso
+    document.getElementById('prev-station-btn').addEventListener('click', () => {
+        const prev = (currentStationIndex - 1 + STATIONS.length) % STATIONS.length;
+        const keepOpen = !document.getElementById('case-modal-wrapper').classList.contains('hidden');
+        goToStation(prev, keepOpen);
+    });
+    document.getElementById('next-station-btn').addEventListener('click', () => {
+        const next = (currentStationIndex + 1) % STATIONS.length;
+        const keepOpen = !document.getElementById('case-modal-wrapper').classList.contains('hidden');
+        goToStation(next, keepOpen);
+    });
+    document.getElementById('open-case-btn').addEventListener('click', () => {
+        openCaseModal(currentStationIndex);
+    });
+
+    // Controles del Pop-up Compacto
+    document.getElementById('close-modal-btn').addEventListener('click', closeCaseModal);
+    document.getElementById('case-modal-backdrop').addEventListener('click', closeCaseModal);
+    document.getElementById('modal-prev-btn').addEventListener('click', () => {
+        const prev = (currentStationIndex - 1 + STATIONS.length) % STATIONS.length;
+        goToStation(prev, true);
+    });
+    document.getElementById('modal-next-btn').addEventListener('click', () => {
+        const next = (currentStationIndex + 1) % STATIONS.length;
+        goToStation(next, true);
+    });
+
+    // Teclado
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') targetYaw += 0.14;
+        if (e.key === 'ArrowRight') targetYaw -= 0.14;
+        if (e.key === 'Escape') closeCaseModal();
+    });
+
+    // Redimensionamiento responsivo
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+}
+
+/**
+ * INICIALIZACIÓN Y LOOP DE ANIMACIÓN
+ */
+function init() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xdcdce0);
+    scene.fog = new THREE.Fog(0xdcdce0, 20, 44);
+
+    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.rotation.order = 'YXZ';
+
+    const firstStation = STATIONS[0];
+    camera.position.copy(firstStation.cameraPos);
+    yaw = targetYaw = firstStation.defaultYaw;
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    buildSupermarketEnvironment();
+    buildAllStationScenes();
+    initQuickNav();
+    updateUIState();
+    setupEvents();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const elapsed = clock.getElapsedTime();
+
+    // Suavizado de cámara 360°
+    yaw += (targetYaw - yaw) * 0.14;
+    pitch += (targetPitch - pitch) * 0.14;
+    camera.rotation.y = yaw;
+    camera.rotation.x = pitch;
+
+    // Animación idle sutil (respiración/asentimiento) en los maniquíes 3D
+    animatedSceneGroups.forEach(item => {
+        const t = elapsed * 2.1 + item.phase;
+        if (item.clientAvatar && item.clientAvatar.userData.upperBody) {
+            item.clientAvatar.userData.upperBody.position.y =
+                item.clientAvatar.userData.baseUpperY + Math.sin(t) * 0.008;
+            item.clientAvatar.userData.headGroup.rotation.z = Math.sin(t * 0.7) * 0.035;
+        }
+        if (item.assistantAvatar && item.assistantAvatar.userData.upperBody) {
+            item.assistantAvatar.userData.upperBody.position.y =
+                item.assistantAvatar.userData.baseUpperY + Math.cos(t) * 0.009;
+            item.assistantAvatar.userData.headGroup.rotation.x = 0.05 + Math.sin(t * 1.2) * 0.04;
+        }
+    });
+
+    renderer.render(scene, camera);
+
+    updateProjectedOverlays();
+    drawMinimap();
+    updateCompass();
+}
+
+window.onload = function () {
+    init();
+    animate();
+};

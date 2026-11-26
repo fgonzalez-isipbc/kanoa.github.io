@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KANOA 360° | Recorrido Virtual de Atención Inclusiva</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js (CDNJS confiable r128) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/viewer/viewer.css">
+</head>
+<body class="text-zinc-100">
+
+    <!-- Lienzo 3D Principal -->
+    <div id="canvas-container"></div>
+
+    <!-- Capa 2D Proyectada (Hotspots de suelo + Indicadores sobre Avatares 3D) -->
+    <div id="overlay-layer" class="fixed inset-0 pointer-events-none overflow-hidden z-10"></div>
+
+    <!-- BARRA SUPERIOR: Identidad KANOA con Alto Contraste y Controles Minimalistas -->
+    <header class="fixed top-0 left-0 right-0 z-20 p-3 sm:p-4 pointer-events-none flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5">
+        <!-- Marca KANOA + Título de Estación con Fondo Sólido Oscuro para Máximo Contraste -->
+        <div class="kanoa-dark-panel rounded-2xl px-4 py-3 shadow-2xl pointer-events-auto flex items-center gap-3.5 max-w-full">
+            <!-- Isotipo KANOA Minimalista Gris Oscuro + Naranja -->
+            <div class="w-10 h-10 rounded-xl bg-zinc-800 border border-orange-500/60 flex items-center justify-center text-orange-500 font-extrabold text-lg shadow-inner shrink-0">
+                K
+            </div>
+            <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-widest uppercase text-orange-400">
+                        <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                        KANOA • Inclusión
+                    </span>
+                    <span id="station-progress-badge" class="text-[11px] font-semibold bg-zinc-800 text-zinc-200 border border-zinc-700 px-2 py-0.5 rounded-md">
+                        1 / 6
+                    </span>
+                </div>
+                <h1 id="station-title" class="text-sm sm:text-base font-extrabold text-white tracking-tight truncate mt-0.5 drop-shadow-sm">
+                    1. Persona con discapacidad auditiva
+                </h1>
+                <p id="station-zone" class="text-[11px] text-zinc-400 truncate">
+                    Pasillo de Abarrotes • Atención en Pasillo
+                </p>
+            </div>
+        </div>
+
+        <!-- Controles Derechos: Botón Protocolo + Brújula Minimalista -->
+        <div class="flex items-center gap-2 pointer-events-auto self-end sm:self-auto">
+            <button id="open-case-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 flex items-center gap-2 transition transform active:scale-95">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>Ver protocolo</span>
+            </button>
+
+            <div class="kanoa-dark-panel rounded-xl px-2.5 py-2 shadow-lg hidden md:flex items-center gap-1.5" title="Estaciones revisadas">
+                <span class="text-[11px] text-zinc-400">Vistas:</span>
+                <span id="visited-counter" class="text-xs font-bold text-orange-400">1/6</span>
+            </div>
+
+            <!-- Brújula 360° Minimalista -->
+            <div class="kanoa-dark-panel rounded-xl p-2 shadow-lg flex items-center gap-2" title="Orientación 360°">
+                <div class="relative w-7 h-7 rounded-full border border-zinc-700 flex items-center justify-center bg-zinc-900">
+                    <span class="absolute top-0.5 text-[7px] font-bold text-orange-400">N</span>
+                    <div id="compass-needle" class="w-0.5 h-4 relative">
+                        <div class="w-full h-1/2 bg-orange-500 rounded-t-full"></div>
+                        <div class="w-full h-1/2 bg-zinc-500 rounded-b-full"></div>
+                    </div>
+                </div>
+                <span id="compass-deg" class="text-[11px] font-mono text-zinc-300 w-8 text-right hidden lg:inline">0°</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MINIMAPA INTERACTIVO 2D (Esquina Inferior Izquierda para no estorbar al Pop-up lateral derecho) -->
+    <aside id="minimap-wrapper" class="fixed bottom-20 sm:bottom-20 left-3 sm:left-4 z-20 kanoa-dark-panel rounded-2xl p-2 shadow-2xl transition-all duration-300 hidden sm:block">
+        <div class="flex items-center justify-between mb-1.5 px-1 gap-3">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                Mapa
+            </span>
+            <button id="toggle-map-size" class="text-[10px] font-medium text-zinc-400 hover:text-orange-400 px-1.5 py-0.5 rounded bg-zinc-800/80 transition">
+                Ampliar
+            </button>
+        </div>
+        <canvas id="minimap-canvas" width="176" height="138" class="rounded-xl bg-zinc-950 border border-zinc-800 cursor-pointer block"></canvas>
+    </aside>
+
+    <!-- BARRA INFERIOR: Controles Anterior / Siguiente + Selector Directo de las 6 Estaciones -->
+    <footer class="fixed bottom-0 left-0 right-0 z-20 p-3 sm:p-4 pointer-events-none flex flex-col items-center gap-2">
+        <!-- Pill de guía rápida -->
+        <div id="hint-pill" class="kanoa-dark-panel rounded-full px-3.5 py-1 text-[11px] text-zinc-300 flex items-center gap-2 shadow-lg transition-opacity duration-500">
+            <span class="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping"></span>
+            <span>Arrastra para girar 360° • Haz clic en los avatares o puntos del suelo</span>
+        </div>
+
+        <div class="flex items-center gap-1.5 max-w-full pointer-events-auto">
+            <!-- Botón Estación Anterior -->
+            <button id="prev-station-btn" class="kanoa-dark-panel hover:bg-zinc-800 active:scale-95 text-zinc-200 px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-xl transition shrink-0" title="Estación anterior">
+                <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                <span class="hidden md:inline">Anterior</span>
+            </button>
+
+            <!-- Barra de Saltos Rápidos (1 a 6) -->
+            <nav id="quick-nav" class="kanoa-dark-panel rounded-2xl p-1 shadow-2xl flex items-center gap-1 overflow-x-auto no-scrollbar max-w-[72vw] sm:max-w-[64vw] lg:max-w-[56vw]">
+                <!-- Botones generados dinámicamente -->
+            </nav>
+
+            <!-- Botón Estación Siguiente -->
+            <button id="next-station-btn" class="kanoa-dark-panel hover:bg-zinc-800 active:scale-95 text-zinc-200 px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-xl transition shrink-0" title="Siguiente estación">
+                <span class="hidden md:inline">Siguiente</span>
+                <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </button>
+        </div>
+    </footer>
+
+    <!-- BACKDROP SOLO PARA PANTALLAS PEQUEÑAS (<768px) -->
+    <div id="case-modal-backdrop" class="fixed inset-0 z-30 hidden bg-zinc-950/65 backdrop-blur-xs md:hidden"></div>
+
+    <!-- POP-UP COMPACTO: PANEL LATERAL DERECHO EN ESCRITORIO / CENTRADO EN MÓVIL -->
+    <div id="case-modal-wrapper" class="hidden">
+        <div id="case-card" class="pointer-events-auto bg-zinc-900/95 backdrop-blur-md text-zinc-100 rounded-2xl border border-zinc-700/80 shadow-2xl flex flex-col max-h-[78vh] sm:max-h-[76vh] overflow-hidden transition-all duration-200">
+            
+            <!-- Cabecera Compacta -->
+            <div class="bg-zinc-950/90 px-4 py-3 border-b border-zinc-800 flex items-center justify-between gap-2.5 shrink-0">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div id="modal-icon-box" class="w-8 h-8 rounded-lg bg-zinc-800 border border-orange-500/40 flex items-center justify-center text-orange-400 shrink-0">
+                        <!-- Ícono SVG compacto -->
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <span id="modal-step-tag" class="text-[10px] font-bold uppercase tracking-wider bg-orange-500 text-white px-2 py-0.5 rounded">
+                                Parada 1/6
+                            </span>
+                            <span id="modal-tool-badge" class="text-[10px] font-medium text-zinc-400 truncate">
+                                Comunicación Visual
+                            </span>
+                        </div>
+                        <h2 id="modal-title" class="text-sm font-bold text-white truncate mt-0.5">
+                            Persona con discapacidad auditiva
+                        </h2>
+                    </div>
+                </div>
+                <button id="close-modal-btn" class="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white transition shrink-0" aria-label="Cerrar panel">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Cuerpo Compacto y Escaneable -->
+            <div class="p-4 overflow-y-auto custom-scroll space-y-3 text-xs">
+                
+                <!-- Bloque Problema -->
+                <div class="rounded-xl bg-zinc-800/60 border border-zinc-700/60 p-3">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">
+                        Problema en tienda
+                    </span>
+                    <p id="modal-problem" class="text-zinc-200 leading-relaxed">
+                        Descripción del problema...
+                    </p>
+                </div>
+
+                <!-- Bloque Solución KANOA (Acento Naranja Minimalista) -->
+                <div class="rounded-xl bg-zinc-800/90 border-l-4 border-l-orange-500 border-y border-r border-zinc-700/60 p-3">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-orange-400 block mb-1">
+                        Solución KANOA
+                    </span>
+                    <p id="modal-solution" class="text-zinc-100 leading-relaxed">
+                        Descripción de la solución...
+                    </p>
+                </div>
+
+                <!-- Ejemplo Práctico en Acción (Compacto: 2 intervenciones + 1 regla clave) -->
+                <div class="rounded-xl bg-zinc-950/70 border border-zinc-800 p-3 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                            Ejemplo en acción
+                        </span>
+                    </div>
+
+                    <!-- Diálogo Breve -->
+                    <div id="modal-dialogue-box" class="space-y-1.5">
+                        <!-- Mensajes compactos generados dinámicamente -->
+                    </div>
+
+                    <!-- Clave práctica en una sola línea limpia -->
+                    <div class="pt-2 border-t border-zinc-800/90 flex items-start gap-2 text-[11px]">
+                        <span class="font-bold text-orange-400 shrink-0">Clave:</span>
+                        <p id="modal-do" class="text-zinc-300 leading-snug"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pie Compacto con Navegación Directa entre Escenas -->
+            <div class="bg-zinc-950/90 border-t border-zinc-800 px-3.5 py-2.5 flex items-center justify-between gap-2 shrink-0">
+                <button id="modal-prev-btn" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-zinc-300 hover:text-white bg-zinc-800/80 hover:bg-zinc-800 transition flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    <span>Anterior</span>
+                </button>
+                <span class="text-[10px] text-zinc-500 hidden sm:inline">Gira la escena 3D al lado</span>
+                <button id="modal-next-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 transition flex items-center gap-1 shadow-sm">
+                    <span id="modal-next-label">Siguiente</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/viewer/viewer.controller.js"></script>
+</body>
+</html>

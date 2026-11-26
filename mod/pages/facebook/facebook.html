@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Página demo</title>
+    <link rel="stylesheet" href="css\pages\facebook.css">
+  </head>
+  <body>
+    <header>
+      <b class="logo">f</b
+      ><input id="search" placeholder="Buscar publicaciones" /><span
+        class="demo"
+        ></span
+      >
+    </header>
+    <main>
+      <section class="hero">
+        <img id="cover" alt="Portada" />
+        <div class="identity">
+          <img id="avatar" alt="Perfil" />
+          <div>
+            <h1 id="name"></h1>
+            <p id="counts"></p>
+            <p id="category"></p>
+          </div>
+          <a id="contact" class="btn" hidden>Mensaje</a>
+        </div>
+        <nav>
+          <button data-tab="posts">Publicaciones</button
+          ><button data-tab="about">Información</button
+          ><button data-tab="photos">Fotos</button>
+        </nav>
+      </section>
+      <div id="status" role="status"></div>
+      <div class="layout">
+        <aside>
+          <section class="card">
+            <h2>Presentación</h2>
+            <p id="description"></p>
+            <div id="details"></div>
+          </section>
+          <section class="card">
+            <h2>Fotos</h2>
+            <div id="gallery" class="gallery"></div>
+          </section>
+        </aside>
+        <section id="feed"></section>
+      </div>
+    </main>
+    <script src="js/pages/facebook.controller.js"></script>
+  </body>
+</html>
